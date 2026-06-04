@@ -2,6 +2,7 @@
 Streamlit Cloud entry point — mirrors the Flask PWA layout.
 Settings → Main file path: streamlit_app.py
 """
+import json
 from datetime import date
 
 import pandas as pd
@@ -21,15 +22,92 @@ st.set_page_config(
 )
 
 NAV_ITEMS = [
-    ("Home", "🏠"),
-    ("Dashboard", "📊"),
-    ("Report", "📈"),
-    ("Profile", "👤"),
+    ("Home", "🏠", "Home"),
+    ("Dashboard", "📊", "Stats"),
+    ("Report", "📈", "Report"),
+    ("Profile", "👤", "Profile"),
 ]
 
-st.markdown("""
+# Injected into parent document — st.markdown CSS often misses fixed nav on Streamlit Cloud
+NAV_BAR_CSS = """
+#gym-nav-fixed-root {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999999 !important;
+  margin: 0 !important;
+  padding: 0.35rem 0.2rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  background: rgba(14, 18, 26, 0.97) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+}
+#gym-nav-fixed-root [data-testid="stHorizontalBlock"] {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  max-width: 540px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  gap: 0 !important;
+}
+#gym-nav-fixed-root [data-testid="column"] {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
+  padding: 0 !important;
+}
+#gym-nav-fixed-root [data-testid="column"] > div,
+#gym-nav-fixed-root .stButton {
+  width: 100% !important;
+}
+#gym-nav-fixed-root .stButton > button {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-height: 52px !important;
+  padding: 0.25rem 0.05rem !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #8b9cb3 !important;
+  font-size: 0.58rem !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+  white-space: pre-line !important;
+  word-break: keep-all !important;
+  overflow: hidden !important;
+}
+#gym-nav-fixed-root .stButton > button p {
+  font-size: 1.1rem !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+#gym-nav-fixed-root .gym-nav-active .stButton > button {
+  color: #22c55e !important;
+  position: relative !important;
+}
+#gym-nav-fixed-root .gym-nav-active .stButton > button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 3px;
+  background: #22c55e;
+  border-radius: 0 0 3px 3px;
+}
+"""
+
+st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    {NAV_BAR_CSS}
 
     #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
     [data-testid="stToolbar"], [data-testid="stDecoration"],
@@ -87,87 +165,16 @@ st.markdown("""
         letter-spacing: 0.08em; color: #22c55e; margin-bottom: 0.85rem;
     }
 
-    .stButton > button:not([data-testid*="nav_"]) {
+    .block-container .stButton > button {
         border-radius: 10px; font-weight: 600; border: none;
         background: linear-gradient(135deg, #16a34a, #22c55e); color: #052e16;
         width: 100%;
     }
-    .stButton > button[kind="secondary"]:not([data-testid*="nav_"]) {
+    .block-container .stButton > button[kind="secondary"] {
         background: #121820; color: #f0f4f8;
         border: 1px solid rgba(255,255,255,0.08);
     }
 
-    /* Bottom tab bar — works locally + on Streamlit Cloud (see #gym-nav-fixed-root) */
-    #gym-nav-fixed-root {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 999999 !important;
-        margin: 0 !important;
-        padding: 0.35rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom, 0px)) !important;
-        background: rgba(14, 18, 26, 0.96) !important;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
-    }
-    #gym-nav-fixed-root [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        max-width: 540px !important;
-        margin: 0 auto !important;
-        gap: 0 !important;
-    }
-    #gym-nav-fixed-root [data-testid="column"] {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-        padding: 0 2px !important;
-    }
-    #gym-nav-fixed-root [data-testid="stRadio"] {
-        max-width: 540px;
-        margin: 0 auto;
-    }
-    #gym-nav-fixed-root [data-testid="stRadio"] > div,
-    #gym-nav-fixed-root [data-testid="stRadio"] [role="radiogroup"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        justify-content: space-around !important;
-        width: 100% !important;
-        gap: 0 !important;
-    }
-    #gym-nav-fixed-root [data-testid="stRadio"] label {
-        flex: 1 1 0 !important;
-        justify-content: center !important;
-        margin: 0 !important;
-        padding: 0.35rem 0.15rem !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        font-size: 0.62rem !important;
-        font-weight: 600 !important;
-        color: #8b9cb3 !important;
-        white-space: pre-line !important;
-        text-align: center !important;
-        line-height: 1.2 !important;
-    }
-    #gym-nav-fixed-root [data-testid="stRadio"] label:has(input:checked) {
-        color: #22c55e !important;
-    }
-    #gym-nav-fixed-root .stButton > button {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        min-height: 52px !important;
-        background: transparent !important;
-        color: #8b9cb3 !important;
-        border: none !important;
-        box-shadow: none !important;
-        font-size: 0.62rem !important;
-        white-space: pre-line !important;
-    }
     @media (max-width: 480px) {
         .block-container { padding-left: 0.85rem !important; padding-right: 0.85rem !important; }
     }
@@ -184,93 +191,79 @@ if "lang" not in st.session_state:
 today_s = date.today().isoformat()
 
 
-PAGE_NAMES = [name for name, _ in NAV_ITEMS]
-PAGE_ICONS = dict(NAV_ITEMS)
-
-
-def _nav_label(name: str) -> str:
-    return f"{PAGE_ICONS[name]}\n{name}"
-
-
 def nav_bar():
-    """Horizontal radio tab bar — stays in one row on mobile (unlike 4 st.buttons in columns)."""
     st.markdown('<div id="gym-bottom-nav-anchor" hidden></div>', unsafe_allow_html=True)
-    idx = PAGE_NAMES.index(st.session_state.page) if st.session_state.page in PAGE_NAMES else 0
-    selected = st.radio(
-        "App navigation",
-        PAGE_NAMES,
-        index=idx,
-        horizontal=True,
-        label_visibility="collapsed",
-        format_func=_nav_label,
-    )
-    if selected != st.session_state.page:
-        st.session_state.page = selected
-        st.rerun()
+    cols = st.columns(len(NAV_ITEMS), gap="small")
+    for col, (page, icon, short) in zip(cols, NAV_ITEMS):
+        with col:
+            active = st.session_state.page == page
+            wrap = "gym-nav-active" if active else ""
+            st.markdown(f'<div class="{wrap}">', unsafe_allow_html=True)
+            if st.button(f"{icon}\n{short}", key=f"nav_{page}", use_container_width=True):
+                st.session_state.page = page
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
 
 
 def pin_bottom_nav():
-    """Streamlit Cloud often splits anchor & radio into sibling blocks; CSS :has() then fails."""
+    """Inject nav CSS into parent + pin bar (Streamlit Cloud splits anchor from columns)."""
+    css_json = json.dumps(NAV_BAR_CSS)
     components.html(
-        """
+        f"""
 <script>
-(function () {
+(function () {{
   const doc = window.parent.document;
+  const CSS = {css_json};
 
-  function findNavRoot(anchor) {
+  if (!doc.getElementById("gym-nav-styles")) {{
+    const style = doc.createElement("style");
+    style.id = "gym-nav-styles";
+    style.textContent = CSS;
+    doc.head.appendChild(style);
+  }}
+
+  function findNavRoot(anchor) {{
     let block = anchor.closest("[data-testid='stVerticalBlock']");
     if (!block) return null;
-    if (block.querySelector("[data-testid='stRadio']")) return block;
+    if (block.querySelector("[data-testid='stHorizontalBlock']")) return block;
     let sib = block;
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 8; i++) {{
       sib = sib.nextElementSibling;
       if (!sib) break;
-      if (sib.querySelector("[data-testid='stRadio']")) return sib;
-    }
+      if (sib.querySelector("[data-testid='stHorizontalBlock']")) return sib;
+    }}
     return block;
-  }
+  }}
 
-  function apply() {
+  function apply() {{
     const anchor = doc.getElementById("gym-bottom-nav-anchor");
     if (!anchor) return;
     const anchorBlock = anchor.closest("[data-testid='stVerticalBlock']");
     const root = findNavRoot(anchor);
     if (!root) return;
 
-    if (anchorBlock && anchorBlock !== root) {
-      anchorBlock.style.cssText = "height:0!important;margin:0!important;padding:0!important;border:none!important;overflow:hidden!important;";
-    }
+    if (anchorBlock && anchorBlock !== root) {{
+      anchorBlock.style.cssText =
+        "height:0!important;margin:0!important;padding:0!important;border:none!important;overflow:hidden!important;";
+    }}
 
     root.id = "gym-nav-fixed-root";
-
     const row = root.querySelector("[data-testid='stHorizontalBlock']");
-    if (row) {
-      row.style.display = "flex";
-      row.style.flexDirection = "row";
-      row.style.flexWrap = "nowrap";
-      root.querySelectorAll("[data-testid='column']").forEach((c) => {
-        c.style.flex = "1 1 0";
-        c.style.minWidth = "0";
-      });
-    }
-    const radio = root.querySelector("[data-testid='stRadio']");
-    if (radio) {
-      const group = radio.querySelector("[role='radiogroup']") || radio.firstElementChild;
-      if (group) {
-        group.style.display = "flex";
-        group.style.flexDirection = "row";
-        group.style.flexWrap = "nowrap";
-        group.style.justifyContent = "space-around";
-        group.style.width = "100%";
-      }
-    }
-  }
+    if (!row) return;
+    row.style.display = "flex";
+    row.style.flexDirection = "row";
+    row.style.flexWrap = "nowrap";
+    root.querySelectorAll("[data-testid='column']").forEach((col) => {{
+      col.style.flex = "1 1 0";
+      col.style.minWidth = "0";
+    }});
+  }}
 
   apply();
-  setTimeout(apply, 80);
-  setTimeout(apply, 400);
-  new MutationObserver(apply).observe(doc.body, { childList: true, subtree: true });
-})();
+  setTimeout(apply, 50);
+  setTimeout(apply, 300);
+  new MutationObserver(apply).observe(doc.body, {{ childList: true, subtree: true }});
+}})();
 </script>
         """,
         height=0,
