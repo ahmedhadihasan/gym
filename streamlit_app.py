@@ -305,5 +305,3 @@ elif st.session_state.page == "Report":
     page_report()
 else:
     page_profile()
-
-nav_bar()
