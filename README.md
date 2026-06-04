@@ -114,6 +114,13 @@ Default MET values are in `utils/met.py`. You can override calories on cardio/sw
 
 Delete `gym_tracker.db` and restart `python app.py` to recreate schema and seed data.
 
-## Note on Streamlit
+## Streamlit Cloud
 
-This project uses **Flask + PWA** as requested. For Streamlit hosting you would need a separate port/UI; this app is designed to run locally with `python app.py`.
+Streamlit Cloud **cannot** run `app.py` (Flask). Use the Streamlit entry point instead:
+
+1. Deploy repo: https://github.com/ahmedhadihasan/gym
+2. In app settings → **Main file path**: `streamlit_app.py`
+3. Reboot the app
+
+Local Flask/PWA: `python app.py`  
+Streamlit UI: `streamlit run streamlit_app.py`

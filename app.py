@@ -594,9 +594,19 @@ def service_worker():
     return send_from_directory("static", "sw.js", mimetype="application/javascript")
 
 
-if __name__ == "__main__":
+def _running_under_streamlit():
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        return get_script_run_ctx() is not None
+    except Exception:
+        return False
+
+
+if __name__ == "__main__" and not _running_under_streamlit():
     if not os.path.exists(os.path.join(app.root_path, "gym_tracker.db")):
         init_db()
     else:
         export_all_csv()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host="0.0.0.0", port=port, debug=debug, use_reloader=False)
