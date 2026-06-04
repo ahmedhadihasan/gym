@@ -29,7 +29,7 @@ st.markdown("""
             radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34,197,94,0.12), transparent);
         color: #f0f4f8;
     }
-    .block-container { padding-top: 0.5rem; max-width: 540px; padding-bottom: 5rem; }
+    .block-container { padding-top: 0.5rem; max-width: 540px; padding-bottom: 6.5rem !important; }
     h1 { font-size: 1.5rem !important; font-weight: 700 !important; letter-spacing: -0.02em; }
     h2, h3 { color: #8b9cb3 !important; font-size: 0.75rem !important;
               text-transform: uppercase; letter-spacing: 0.08em; }
@@ -60,6 +60,39 @@ st.markdown("""
     div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton > button {
         min-height: 52px; font-size: 0.72rem;
     }
+    /* Fixed bottom navbar */
+    #nav-marker ~ div[data-testid="stHorizontalBlock"] {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 100% !important;
+        max-width: 540px !important;
+        z-index: 999999 !important;
+        background: rgba(14, 18, 26, 0.96) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding: 0.45rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom, 0px)) !important;
+        margin: 0 !important;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+    }
+    #nav-marker ~ div[data-testid="stHorizontalBlock"] button {
+        background: transparent !important;
+        color: #8b9cb3 !important;
+        border: none !important;
+        box-shadow: none !important;
+        white-space: pre-line;
+        line-height: 1.2;
+        min-height: 56px !important;
+        font-size: 0.65rem !important;
+        font-weight: 600 !important;
+    }
+    #nav-marker ~ div[data-testid="stHorizontalBlock"] .nav-active button {
+        background: rgba(34, 197, 94, 0.15) !important;
+        color: #22c55e !important;
+        border: 1px solid rgba(34, 197, 94, 0.35) !important;
+    }
     .nav-active button { background: rgba(34,197,94,0.2) !important;
                           color: #22c55e !important;
                           border: 1px solid rgba(34,197,94,0.4) !important; }
@@ -80,6 +113,7 @@ today_s = date.today().isoformat()
 def nav_bar():
     pages = ["Home", "Dashboard", "Report", "Profile"]
     icons = {"Home": "🏠", "Dashboard": "📊", "Report": "📈", "Profile": "👤"}
+    st.markdown('<div id="nav-marker"></div>', unsafe_allow_html=True)
     cols = st.columns(4)
     for col, name in zip(cols, pages):
         with col:
@@ -295,7 +329,6 @@ def page_profile():
 
 # --- Render ---
 st.caption(date.today().strftime("%A, %d %b %Y"))
-nav_bar()
 
 if st.session_state.page == "Home":
     page_home()
@@ -305,3 +338,5 @@ elif st.session_state.page == "Report":
     page_report()
 else:
     page_profile()
+
+nav_bar()
