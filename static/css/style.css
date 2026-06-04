@@ -362,3 +362,90 @@ textarea {
   background: var(--warn);
   color: #000;
 }
+
+.lang-card {
+  position: sticky;
+  top: 72px;
+  z-index: 50;
+}
+
+.lang-select {
+  margin-bottom: 0;
+}
+
+.plan-root.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.plan-root.rtl .checklist li {
+  flex-direction: row-reverse;
+}
+
+.plan-subtitle {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.nutrition-list {
+  list-style: none;
+  margin: 0.5rem 0;
+}
+
+.nutrition-list li {
+  padding: 0.35rem 0;
+  font-size: 0.95rem;
+}
+
+.rest-note {
+  font-size: 0.85rem;
+  color: var(--warn);
+  margin-top: 0.5rem;
+}
+
+.course-day {
+  margin-bottom: 1rem;
+}
+
+.course-day h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.course-day .day-summary {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.course-day.rest-day {
+  border-color: var(--warn);
+}
+
+.ex-tag {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: var(--blue);
+  color: #fff;
+  margin-inline-start: 0.35rem;
+}
+
+.ex-tag.optional {
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.ex-tag.warmup {
+  background: var(--green-dim);
+}
+
+nav.bottom-nav a {
+  font-size: 0.6rem;
+  padding: 0.2rem 0.25rem;
+}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% set active = 'plan' %}
+{% block title %}Course Plan — Gym Tracker{% endblock %}
+{% block header %}Course Plan{% endblock %}
+{% block content %}
+<div class="card lang-card">
+  <label for="lang-select" id="lang-label">Language</label>
+  <select id="lang-select" class="lang-select">
+    <option value="en">English</option>
+    <option value="ar">العربية</option>
+    <option value="ku">کوردی (سۆرانی)</option>
+  </select>
+</div>
+<div id="plan-root" class="plan-root" dir="ltr">
+  <p class="plan-subtitle" id="plan-subtitle"></p>
+  <div class="card nutrition-card">
+    <h2 id="nutrition-title"></h2>
+    <ul class="nutrition-list" id="nutrition-list"></ul>
+    <p class="rest-note" id="rest-note"></p>
+  </div>
+  <div id="plan-days"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>initCoursePlanPage();</script>
+{% endblock %}

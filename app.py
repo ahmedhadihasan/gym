@@ -115,6 +115,18 @@ def settings_page():
     return render_template("settings.html")
 
 
+@app.route("/course-plan")
+def course_plan_page():
+    return render_template("course_plan.html", active="plan")
+
+
+@app.route("/api/course-plan")
+def api_course_plan():
+    from data.course_i18n import get_course_plan
+    lang = request.args.get("lang", "en")
+    return jsonify(get_course_plan(lang))
+
+
 # --- API: Dashboard ---
 
 @app.route("/api/dashboard")

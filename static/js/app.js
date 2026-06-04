@@ -329,3 +329,65 @@ function copyReport() {
   const text = document.getElementById('report-text').textContent;
   navigator.clipboard.writeText(text).then(() => toast('Copied!'));
 }
+
+const LANG_STORAGE_KEY = 'gym_lang';
+
+function getSavedLang() {
+  return localStorage.getItem(LANG_STORAGE_KEY) || 'en';
+}
+
+function saveLang(lang) {
+  localStorage.setItem(LANG_STORAGE_KEY, lang);
+}
+
+async function loadCoursePlan(lang) {
+  const data = await api(`/api/course-plan?lang=${lang}`);
+  const root = document.getElementById('plan-root');
+  const ui = data.ui;
+  root.dir = data.dir;
+  root.classList.toggle('rtl', data.dir === 'rtl');
+  document.documentElement.lang = data.lang;
+  document.getElementById('lang-label').textContent = ui.language;
+  document.querySelector('header.app-header h1').textContent = ui.page_title;
+  document.getElementById('plan-subtitle').textContent = ui.subtitle;
+  document.getElementById('nutrition-title').textContent = ui.nutrition_title;
+  document.getElementById('nutrition-list').innerHTML = `
+    <li>${ui.nutrition_cal}</li>
+    <li>${ui.nutrition_protein}</li>
+    <li>${ui.nutrition_water}</li>
+    <li>${ui.nutrition_steps}</li>`;
+  document.getElementById('rest-note').textContent = ui.rest_note;
+
+  const daysEl = document.getElementById('plan-days');
+  daysEl.innerHTML = '';
+  data.days.forEach((day) => {
+    const card = document.createElement('div');
+    card.className = `card course-day${day.is_rest ? ' rest-day' : ''}`;
+    let list = '';
+    day.exercises.forEach((ex) => {
+      const tag = ex.tag_label
+        ? `<span class="ex-tag ${ex.tag || ''}">${ex.tag_label}</span>`
+        : '';
+      list += `<li><span>${ex.name}${tag}</span><span class="sets">${ex.detail}</span></li>`;
+    });
+    const restHint = day.is_rest ? `<p class="day-summary">${ui.friday_rest}</p>` : '';
+    card.innerHTML = `
+      <h2>${day.day_name} <span class="badge">${day.muscle_group}</span></h2>
+      <p class="day-summary">${day.summary}</p>
+      ${restHint}
+      <ul class="checklist">${list}</ul>`;
+    daysEl.appendChild(card);
+  });
+}
+
+function initCoursePlanPage() {
+  const select = document.getElementById('lang-select');
+  if (!select) return;
+  const saved = getSavedLang();
+  select.value = saved;
+  loadCoursePlan(saved);
+  select.addEventListener('change', () => {
+    saveLang(select.value);
+    loadCoursePlan(select.value);
+  });
+}

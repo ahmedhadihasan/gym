@@ -7,6 +7,7 @@ from datetime import date
 import streamlit as st
 
 import services as svc
+from data.course_i18n import LANGS, get_course_plan
 from utils.csv_export import export_all_csv, generate_chatgpt_report, import_csv_file
 
 st.set_page_config(
@@ -33,9 +34,22 @@ st.markdown("""
 
 svc.ensure_database()
 
+if "lang" not in st.session_state:
+    st.session_state.lang = "en"
+
+lang_options = {code: LANGS[code]["label"] for code in LANGS}
+st.session_state.lang = st.sidebar.selectbox(
+    "Language / زمان / اللغة",
+    options=list(lang_options.keys()),
+    format_func=lambda c: lang_options[c],
+    index=list(lang_options.keys()).index(st.session_state.lang),
+    key="lang_select",
+)
+lang = st.session_state.lang
+
 menu = st.sidebar.radio(
     "Menu",
-    ["Dashboard", "Weight", "Workout", "Cardio", "Swimming", "Food", "Report"],
+    ["Dashboard", "Course Plan", "Weight", "Workout", "Cardio", "Swimming", "Food", "Report"],
 )
 
 if menu == "Dashboard":
@@ -63,6 +77,30 @@ if menu == "Dashboard":
     c6.metric("Cardio", f"{int(d['cardio_minutes'])} min")
     c7.metric("Swim", f"{int(d['swimming_minutes'])} min")
     c8.metric("Burn est.", d["calories_burned_estimate"])
+
+elif menu == "Course Plan":
+    plan = get_course_plan(lang)
+    ui = plan["ui"]
+    dir_attr = 'dir="rtl"' if plan["dir"] == "rtl" else ""
+    st.markdown(f'<div {dir_attr}>', unsafe_allow_html=True)
+    st.title(ui["page_title"])
+    st.caption(ui["subtitle"])
+    st.markdown(f"#### {ui['nutrition_title']}")
+    st.markdown(
+        f"- {ui['nutrition_cal']}\n- {ui['nutrition_protein']}\n"
+        f"- {ui['nutrition_water']}\n- {ui['nutrition_steps']}\n\n*{ui['rest_note']}*"
+    )
+    for day in plan["days"]:
+        with st.expander(f"{day['day_name']} — {day['muscle_group']}", expanded=not day["is_rest"]):
+            st.caption(day["summary"])
+            if day["is_rest"]:
+                st.info(ui["friday_rest"])
+            lines = []
+            for ex in day["exercises"]:
+                tag = f" ({ex['tag_label']})" if ex.get("tag_label") else ""
+                lines.append(f"- **{ex['name']}**{tag} — {ex['detail']}")
+            st.markdown("\n".join(lines))
+    st.markdown("</div>", unsafe_allow_html=True)
 
 elif menu == "Weight":
     st.title("Body Weight")
