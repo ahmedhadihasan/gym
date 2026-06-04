@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.env
+venv/
+.venv/
+gym_tracker.db
+*.db-journal
+exports/*.csv

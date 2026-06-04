@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Cardio — Gym Tracker{% endblock %}
+{% block header %}Cardio{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Log Cardio</h2>
+  <form id="cardio-form">
+    <label>Date</label>
+    <input type="date" id="cardio-date" required>
+    <label>Type</label>
+    <select id="cardio-type" required>
+      <option value="bicycle">Bicycle</option>
+      <option value="treadmill">Treadmill / Incline Walk</option>
+      <option value="elliptical">Elliptical</option>
+      <option value="stair_climber">Stair Climber</option>
+      <option value="walking">Walking (steps)</option>
+    </select>
+    <label>Duration (minutes)</label>
+    <input type="number" step="1" id="cardio-mins" required>
+    <label>Intensity</label>
+    <select id="cardio-intensity">
+      <option value="easy">Easy</option>
+      <option value="moderate" selected>Moderate</option>
+      <option value="hard">Hard</option>
+    </select>
+    <label>Walking steps (if walking)</label>
+    <input type="number" id="cardio-steps" placeholder="Optional">
+    <label>Calories (edit if machine differs)</label>
+    <input type="number" step="0.1" id="cardio-cal" placeholder="Auto-calculated if empty">
+    <label>Notes</label>
+    <textarea id="cardio-notes" rows="2"></textarea>
+    <button type="submit" class="btn btn-primary">Save Cardio</button>
+  </form>
+</div>
+<div class="card">
+  <h2>Today&apos;s Logs</h2>
+  <ul class="checklist" id="cardio-today"></ul>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById('cardio-date').value = todayISO();
+  document.getElementById('cardio-form').onsubmit = saveCardio;
+  loadCardioToday();
+</script>
+{% endblock %}

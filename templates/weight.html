@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% set active = 'weight' %}
+{% block title %}Weight — Gym Tracker{% endblock %}
+{% block header %}Body Weight{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Log Today</h2>
+  <form id="weight-form">
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="weight-date" required>
+    </div>
+    <div class="form-group">
+      <label>Weight (kg)</label>
+      <input type="number" step="0.1" id="weight-kg" placeholder="86.0" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Weight</button>
+  </form>
+</div>
+<div class="card">
+  <h2>7-Day Average</h2>
+  <p class="stat"><span class="value" id="avg-7-display">—</span> kg</p>
+</div>
+<div class="card">
+  <h2>History</h2>
+  <div class="chart-wrap"><canvas id="weight-chart"></canvas></div>
+  <ul class="checklist" id="weight-history"></ul>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>initWeightPage();</script>
+{% endblock %}

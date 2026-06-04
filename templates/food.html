@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% set active = 'food' %}
+{% block title %}Food — Gym Tracker{% endblock %}
+{% block header %}Food & Daily{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Daily Log</h2>
+  <form id="food-form">
+    <label>Date</label>
+    <input type="date" id="food-date" required>
+    <label>Calories</label>
+    <input type="number" id="food-cal" placeholder="1700-1900">
+    <label>Protein (g)</label>
+    <input type="number" step="0.1" id="food-protein" placeholder="150-180">
+    <label>Carbs (g)</label>
+    <input type="number" step="0.1" id="food-carbs">
+    <label>Fat (g)</label>
+    <input type="number" step="0.1" id="food-fat">
+    <label>Water (liters)</label>
+    <input type="number" step="0.1" id="food-water" placeholder="3-4">
+    <label>Steps</label>
+    <input type="number" id="food-steps" placeholder="7000-10000">
+    <label>Sleep (hours)</label>
+    <input type="number" step="0.1" id="food-sleep">
+    <label>Notes (hunger, energy, back pain, soreness)</label>
+    <textarea id="food-notes" rows="3"></textarea>
+    <button type="submit" class="btn btn-primary">Save Daily Log</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById('food-date').value = todayISO();
+  document.getElementById('food-date').onchange = loadFood;
+  document.getElementById('food-form').onsubmit = saveFood;
+  loadFood();
+</script>
+{% endblock %}

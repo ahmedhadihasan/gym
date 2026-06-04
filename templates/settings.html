@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Settings — Gym Tracker{% endblock %}
+{% block header %}Quick Links{% endblock %}
+{% block content %}
+<div class="btn-row">
+  <a href="/cardio" class="btn btn-secondary">Cardio Tracker</a>
+  <a href="/swimming" class="btn btn-secondary">Swimming Tracker</a>
+  <a href="/report" class="btn btn-primary">Reports & CSV</a>
+</div>
+<div class="card">
+  <h2>Install on Phone</h2>
+  <p style="font-size:0.9rem;color:var(--muted)">iOS: Share → Add to Home Screen. Android: Menu → Install app.</p>
+</div>
+{% endblock %}
