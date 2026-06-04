@@ -104,11 +104,13 @@ NAV_BAR_CSS = """
 }
 """
 
-st.markdown(f"""
+st.markdown(
+    """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    {NAV_BAR_CSS}
-
+"""
+    + NAV_BAR_CSS
+    + """
     #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
     [data-testid="stToolbar"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"], .stDeployButton { display: none !important; }
@@ -179,7 +181,9 @@ st.markdown(f"""
         .block-container { padding-left: 0.85rem !important; padding-right: 0.85rem !important; }
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 svc.ensure_database()
 
