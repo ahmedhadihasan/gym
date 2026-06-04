@@ -1,73 +1,57 @@
 {% extends "base.html" %}
 {% set active = 'home' %}
 {% block title %}Home — Gym Tracker{% endblock %}
-{% block header %}Today{% endblock %}
+{% block header %}Home{% endblock %}
 {% block content %}
 <div id="dashboard-loading" class="empty">Loading…</div>
 <div id="dashboard" style="display:none;">
-  <div class="card card-compact">
-    <h2><span id="day-name"></span> · <span id="muscle-group"></span>
-      <span id="rest-badge" class="badge badge-rest" style="display:none">Rest</span>
-    </h2>
-    <ul class="checklist checklist-compact" id="today-plan"></ul>
-    <a href="/course-plan" class="text-link">Course plan (EN / AR / KU) →</a>
+  <div class="hero-today" id="hero-today">
+    <div class="day-title"><span id="day-name"></span></div>
+    <div class="day-sub"><span id="muscle-group"></span>
+      <span id="rest-badge" class="badge badge-rest" style="display:none">Rest day</span>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>Quick log</h2>
+  <div class="card card-glass">
+    <h2 class="accent">Quick log</h2>
     <div class="quick-log two-col">
       <div class="quick-row">
-        <label>Weight (kg)</label>
-        <input type="number" step="0.1" id="q-weight" placeholder="86">
+        <label>Weight</label>
+        <input type="number" step="0.1" id="q-weight" placeholder="kg">
         <button type="button" class="btn-save" onclick="quickSave('weight')">Save</button>
       </div>
       <div class="quick-row">
         <label>Calories</label>
-        <input type="number" id="q-cal" placeholder="1800">
+        <input type="number" id="q-cal" placeholder="kcal">
         <button type="button" class="btn-save" onclick="quickSave('cal')">Save</button>
       </div>
       <div class="quick-row">
-        <label>Protein (g)</label>
-        <input type="number" id="q-protein" placeholder="160">
+        <label>Protein</label>
+        <input type="number" id="q-protein" placeholder="g">
         <button type="button" class="btn-save" onclick="quickSave('protein')">Save</button>
       </div>
       <div class="quick-row">
-        <label>Bicycle (min)</label>
-        <input type="number" id="q-bike" placeholder="20">
+        <label>Bicycle</label>
+        <input type="number" id="q-bike" placeholder="min">
         <button type="button" class="btn-save" onclick="quickSave('bike')">Save</button>
       </div>
       <div class="quick-row">
-        <label>Swim (min)</label>
-        <input type="number" id="q-swim" placeholder="25">
+        <label>Swim</label>
+        <input type="number" id="q-swim" placeholder="min">
         <button type="button" class="btn-save" onclick="quickSave('swim')">Save</button>
       </div>
       <div class="quick-row">
         <label>Steps</label>
-        <input type="number" id="q-steps" placeholder="8000">
+        <input type="number" id="q-steps" placeholder="count">
         <button type="button" class="btn-save" onclick="quickSave('steps')">Save</button>
       </div>
     </div>
   </div>
 
   <div class="card card-compact">
-    <div class="stat-grid stat-grid-3">
-      <div class="stat"><div class="value" id="current-weight">—</div><div class="label">kg now</div></div>
-      <div class="stat"><div class="value" id="goal-weight">—</div><div class="label">goal</div></div>
-      <div class="stat"><div class="value" id="progress-pct">0</div><div class="label">% done</div></div>
-    </div>
-    <div class="progress-bar"><div class="fill" id="progress-fill" style="width:0%"></div></div>
-    <p id="pace-msg" class="pace-good caption"></p>
-  </div>
-
-  <div class="card card-compact">
-    <div class="stat-grid">
-      <div class="stat"><div class="value" id="cal-in">—</div><div class="label">eaten</div></div>
-      <div class="stat"><div class="value" id="protein">—</div><div class="label">protein</div></div>
-      <div class="stat"><div class="value" id="cardio-min">0</div><div class="label">cardio</div></div>
-      <div class="stat"><div class="value" id="swim-min">0</div><div class="label">swim</div></div>
-      <div class="stat"><div class="value" id="cal-burn">0</div><div class="label">burned</div></div>
-      <div class="stat"><div class="value" id="deficit">—</div><div class="label">deficit</div></div>
-    </div>
+    <h2>Today’s exercises</h2>
+    <ul class="checklist checklist-compact" id="today-plan"></ul>
+    <a href="/workout" class="btn btn-ghost" style="margin-top:0.75rem">Log workout sets →</a>
   </div>
 </div>
 {% endblock %}

@@ -70,18 +70,23 @@ def ensure_db():
 # --- Pages ---
 
 @app.route("/")
-def dashboard():
-    return render_template("dashboard.html")
+def home():
+    return render_template("dashboard.html", active="home")
+
+
+@app.route("/dashboard")
+def dashboard_stats():
+    return render_template("dashboard_stats.html", active="dashboard")
 
 
 @app.route("/weight")
 def weight_page():
-    return render_template("weight.html")
+    return render_template("weight.html", active="dashboard")
 
 
 @app.route("/workout")
 def workout_page():
-    return render_template("workout.html")
+    return render_template("workout.html", active="dashboard")
 
 
 @app.route("/cardio")
@@ -96,17 +101,26 @@ def swimming_page():
 
 @app.route("/food")
 def food_page():
-    return render_template("food.html")
+    return render_template("food.html", active="dashboard")
 
 
 @app.route("/report")
 def report_page():
-    return render_template("report.html")
+    return render_template("report.html", active="report")
 
 
 @app.route("/settings")
 def settings_page():
-    return render_template("settings.html")
+    return render_template("settings.html", active="profile")
+
+
+@app.route("/api/user")
+def api_user():
+    conn = get_connection()
+    try:
+        return jsonify(get_user(conn) or {})
+    finally:
+        conn.close()
 
 
 @app.route("/course-plan")

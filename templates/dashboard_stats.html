@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% set active = 'dashboard' %}
+{% block title %}Dashboard — Gym Tracker{% endblock %}
+{% block header %}Dashboard{% endblock %}
+{% block content %}
+<div id="dash-stats-loading" class="empty">Loading…</div>
+<div id="dash-stats" style="display:none;">
+  <div class="card card-glass">
+    <h2 class="accent">Weight progress</h2>
+    <div class="stat-grid stat-grid-3">
+      <div class="stat"><div class="value accent" id="ds-current">—</div><div class="label">Current</div></div>
+      <div class="stat"><div class="value" id="ds-goal">—</div><div class="label">Goal kg</div></div>
+      <div class="stat"><div class="value accent" id="ds-pct">0%</div><div class="label">Progress</div></div>
+    </div>
+    <div class="progress-bar"><div class="fill" id="ds-progress-fill" style="width:0%"></div></div>
+    <p id="ds-pace" class="caption"></p>
+    <p class="caption">7-day avg: <strong id="ds-avg7">—</strong> kg</p>
+  </div>
+
+  <div class="card">
+    <h2>Today at a glance</h2>
+    <div class="stat-grid">
+      <div class="stat"><div class="value" id="ds-cal">—</div><div class="label">Calories</div></div>
+      <div class="stat"><div class="value" id="ds-prot">—</div><div class="label">Protein</div></div>
+      <div class="stat"><div class="value" id="ds-cardio">0</div><div class="label">Cardio min</div></div>
+      <div class="stat"><div class="value" id="ds-swim">0</div><div class="label">Swim min</div></div>
+      <div class="stat"><div class="value" id="ds-burn">0</div><div class="label">Burned</div></div>
+      <div class="stat"><div class="value" id="ds-deficit">—</div><div class="label">Deficit</div></div>
+    </div>
+  </div>
+
+  <div class="card card-compact">
+    <h2>Workout</h2>
+    <p class="caption" id="ds-workout-day"></p>
+    <div id="dash-workout-list" class="quick-log"></div>
+    <a href="/workout" class="text-link">Full workout page →</a>
+  </div>
+
+  <div class="card card-compact">
+    <h2>Weight chart</h2>
+    <div class="chart-wrap"><canvas id="dash-weight-chart"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>loadDashboardStats();</script>
+{% endblock %}

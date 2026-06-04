@@ -1,15 +1,50 @@
 {% extends "base.html" %}
-{% block title %}Settings — Gym Tracker{% endblock %}
-{% block header %}Quick Links{% endblock %}
+{% set active = 'profile' %}
+{% block title %}Profile — Gym Tracker{% endblock %}
+{% block header %}Profile{% endblock %}
 {% block content %}
-<div class="btn-row">
-  <a href="/course-plan" class="btn btn-secondary">Course Plan (EN / AR / KU)</a>
-  <a href="/cardio" class="btn btn-secondary">Cardio Tracker</a>
-  <a href="/swimming" class="btn btn-secondary">Swimming Tracker</a>
-  <a href="/report" class="btn btn-secondary">Reports & CSV</a>
+<div class="card card-glass">
+  <div class="profile-card" id="profile-head">
+    <div class="profile-avatar" id="profile-initial">A</div>
+    <div class="profile-meta">
+      <h3 id="profile-name">Loading…</h3>
+      <p id="profile-goal">—</p>
+    </div>
+  </div>
+  <div id="profile-rows"></div>
 </div>
+
 <div class="card">
-  <h2>Install on Phone</h2>
-  <p style="font-size:0.9rem;color:var(--muted)">iOS: Share → Add to Home Screen. Android: Menu → Install app.</p>
+  <h2>Shortcuts</h2>
+  <div class="nav-tiles">
+    <a href="/course-plan" class="nav-tile">
+      <span class="tile-icon">📋</span>
+      <span class="tile-label">Course plan</span>
+      <span class="tile-hint">EN · AR · KU</span>
+    </a>
+    <a href="/workout" class="nav-tile">
+      <span class="tile-icon">💪</span>
+      <span class="tile-label">Workout</span>
+      <span class="tile-hint">Log sets</span>
+    </a>
+    <a href="/food" class="nav-tile">
+      <span class="tile-icon">🍽️</span>
+      <span class="tile-label">Food</span>
+      <span class="tile-hint">Macros & steps</span>
+    </a>
+    <a href="/weight" class="nav-tile">
+      <span class="tile-icon">⚖️</span>
+      <span class="tile-label">Weight</span>
+      <span class="tile-hint">History</span>
+    </a>
+  </div>
 </div>
+
+<div class="card card-compact">
+  <h2>Install app</h2>
+  <p class="caption">iPhone: Share → Add to Home Screen · Android: Install app from browser menu</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>loadProfile();</script>
 {% endblock %}

@@ -3,23 +3,25 @@
 {% block title %}Report — Gym Tracker{% endblock %}
 {% block header %}Report{% endblock %}
 {% block content %}
-<div class="card card-compact">
-  <h2>Last 7 days</h2>
+<div class="card card-glass">
+  <h2 class="accent">Last 7 days</h2>
   <div class="stat-grid stat-grid-3">
-    <div class="stat"><div class="value" id="r-avg-w">—</div><div class="label">avg kg</div></div>
-    <div class="stat"><div class="value" id="r-workouts">0</div><div class="label">workouts</div></div>
-    <div class="stat"><div class="value" id="r-swim">0</div><div class="label">swim</div></div>
-    <div class="stat"><div class="value" id="r-cardio">0</div><div class="label">cardio</div></div>
-    <div class="stat"><div class="value" id="r-cal">—</div><div class="label">avg kcal</div></div>
-    <div class="stat"><div class="value" id="r-prot">—</div><div class="label">protein</div></div>
+    <div class="stat"><div class="value accent" id="r-avg-w">—</div><div class="label">Avg kg</div></div>
+    <div class="stat"><div class="value" id="r-workouts">0</div><div class="label">Workouts</div></div>
+    <div class="stat"><div class="value" id="r-swim">0</div><div class="label">Swim min</div></div>
+    <div class="stat"><div class="value" id="r-cardio">0</div><div class="label">Cardio</div></div>
+    <div class="stat"><div class="value" id="r-cal">—</div><div class="label">Avg kcal</div></div>
+    <div class="stat"><div class="value" id="r-prot">—</div><div class="label">Protein</div></div>
   </div>
 </div>
 <div class="card">
+  <h2>Export</h2>
   <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
   <button class="btn btn-secondary" onclick="chatGPTReport()">ChatGPT report</button>
 </div>
 <div class="modal" id="report-modal">
   <div class="modal-content">
+    <h3 style="margin-bottom:1rem;color:var(--text)">Copy report</h3>
     <pre class="report-pre" id="report-text"></pre>
     <button class="btn btn-primary" onclick="copyReport()">Copy</button>
     <button class="btn btn-secondary" onclick="closeModal('report-modal')">Close</button>

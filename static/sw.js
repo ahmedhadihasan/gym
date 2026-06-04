@@ -1,6 +1,9 @@
-const CACHE = 'gym-tracker-v5';
+const CACHE = 'gym-tracker-v6';
 const ASSETS = [
   '/',
+  '/dashboard',
+  '/report',
+  '/settings',
   '/course-plan',
   '/static/css/style.css',
   '/static/js/app.js',

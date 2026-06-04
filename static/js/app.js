@@ -86,24 +86,100 @@ async function loadDashboard() {
   if (qp && data.protein) qp.value = data.protein;
   const qs = document.getElementById('q-steps');
   if (qs && data.steps) qs.value = data.steps;
+}
 
-  document.getElementById('current-weight').textContent = data.current_weight ?? '—';
-  document.getElementById('goal-weight').textContent = data.goal_weight ?? '—';
-  document.getElementById('progress-pct').textContent = `${data.progress_percent ?? 0}%`;
-  document.getElementById('progress-fill').style.width = `${data.progress_percent || 0}%`;
+let dashChart = null;
 
-  const pace = document.getElementById('pace-msg');
-  if (pace) {
-    pace.textContent = data.pace_message || '';
-    pace.className = `pace-${(data.pace_status || 'unknown').replace('too_', '')} caption`;
+async function loadDashboardStats() {
+  const [data, workout] = await Promise.all([
+    api('/api/dashboard'),
+    api('/api/workout/today'),
+  ]);
+  const loading = document.getElementById('dash-stats-loading');
+  const panel = document.getElementById('dash-stats');
+  if (!panel) return;
+  if (loading) loading.style.display = 'none';
+  panel.style.display = 'block';
+
+  document.getElementById('ds-current').textContent = data.current_weight ?? '—';
+  document.getElementById('ds-goal').textContent = data.goal_weight ?? '—';
+  document.getElementById('ds-pct').textContent = `${data.progress_percent ?? 0}%`;
+  document.getElementById('ds-progress-fill').style.width = `${data.progress_percent || 0}%`;
+  document.getElementById('ds-avg7').textContent = data.weight_7day_avg ?? '—';
+  const pace = document.getElementById('ds-pace');
+  if (pace) pace.textContent = data.pace_message || '';
+
+  document.getElementById('ds-cal').textContent = data.calories ?? '—';
+  document.getElementById('ds-prot').textContent = data.protein ?? '—';
+  document.getElementById('ds-cardio').textContent = Math.round(data.cardio_minutes || 0);
+  document.getElementById('ds-swim').textContent = Math.round(data.swimming_minutes || 0);
+  document.getElementById('ds-burn').textContent = data.calories_burned_estimate ?? 0;
+  document.getElementById('ds-deficit').textContent = data.estimated_deficit ?? '—';
+
+  document.getElementById('ds-workout-day').textContent =
+    `${workout.day_name} · ${workout.plan?.[0]?.muscle_group || ''}`;
+
+  const list = document.getElementById('dash-workout-list');
+  if (list && workout.exercises?.length) {
+    list.innerHTML = '';
+    workout.exercises.slice(0, 4).forEach((ex) => {
+      const div = document.createElement('div');
+      div.className = 'quick-row';
+      div.innerHTML = `<label>${ex.exercise_name}</label><span class="sets">${ex.sets_target}×${ex.reps_target}</span><span></span>`;
+      list.appendChild(div);
+    });
   }
 
-  document.getElementById('cal-in').textContent = data.calories ?? '—';
-  document.getElementById('protein').textContent = data.protein ?? '—';
-  document.getElementById('cardio-min').textContent = Math.round(data.cardio_minutes || 0);
-  document.getElementById('swim-min').textContent = Math.round(data.swimming_minutes || 0);
-  document.getElementById('cal-burn').textContent = data.calories_burned_estimate ?? 0;
-  document.getElementById('deficit').textContent = data.estimated_deficit ?? '—';
+  const hist = await api('/api/weight');
+  const ctx = document.getElementById('dash-weight-chart');
+  if (ctx && hist.history?.length) {
+    const chartData = [...hist.history].reverse();
+    if (dashChart) dashChart.destroy();
+    dashChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.map((d) => d.log_date.slice(5)),
+        datasets: [{
+          data: chartData.map((d) => d.weight_kg),
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34, 197, 94, 0.12)',
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2,
+          pointRadius: 0,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#8b9cb3', maxTicksLimit: 6 }, grid: { display: false } },
+          y: { ticks: { color: '#8b9cb3' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        },
+      },
+    });
+  }
+}
+
+async function loadProfile() {
+  const user = await api('/api/user');
+  if (!user) return;
+  const name = user.name || 'User';
+  document.getElementById('profile-name').textContent = name;
+  document.getElementById('profile-initial').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('profile-goal').textContent =
+    `Goal ${user.goal_weight_kg} kg by ${user.goal_date || '—'}`;
+  const rows = [
+    ['Age', user.age],
+    ['Height', user.height_cm ? `${user.height_cm} cm` : '—'],
+    ['Current', user.current_weight_kg ? `${user.current_weight_kg} kg` : '—'],
+    ['Focus', user.main_goal || '—'],
+    ['Note', user.restrictions || '—'],
+  ];
+  document.getElementById('profile-rows').innerHTML = rows
+    .map(([k, v]) => `<div class="info-row"><span>${k}</span><span>${v ?? '—'}</span></div>`)
+    .join('');
 }
 
 async function quickSave(type) {
@@ -226,7 +302,7 @@ async function initWorkoutPage() {
 
   data.exercises.forEach((ex) => {
     const row = document.createElement('div');
-    row.className = 'card card-compact';
+    row.className = 'quick-row quick-row-ex';
     const last = ex.last_weight_kg != null
       ? `Last ${ex.last_weight_kg} kg × ${ex.last_reps || '?'}`
       : '';
