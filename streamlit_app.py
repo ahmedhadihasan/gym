@@ -6,6 +6,7 @@ from datetime import date
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 import services as svc
 from data.course_i18n import LANGS, get_course_plan
@@ -19,18 +20,48 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+NAV_ITEMS = [
+    ("Home", "🏠"),
+    ("Dashboard", "📊"),
+    ("Report", "📈"),
+    ("Profile", "👤"),
+]
+
 st.markdown("""
 <style>
-    [data-testid="stSidebar"] { display: none; }
-    [data-testid="collapsedControl"] { display: none; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
+    [data-testid="stToolbar"], [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"], .stDeployButton { display: none !important; }
+    [data-testid="stSidebar"], [data-testid="collapsedControl"] { display: none !important; }
+
     .stApp {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         background: #0a0e14;
         background-image:
             radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34,197,94,0.12), transparent);
         color: #f0f4f8;
     }
-    .block-container { padding-top: 0.5rem; max-width: 540px; padding-bottom: 6.5rem !important; }
-    h1 { font-size: 1.5rem !important; font-weight: 700 !important; letter-spacing: -0.02em; }
+    .block-container {
+        padding-top: 0.25rem !important;
+        max-width: 540px !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    .app-topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.65rem 0 0.85rem; margin-bottom: 0.25rem;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .app-topbar .app-title {
+        font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; margin: 0;
+    }
+    .app-topbar .app-date { font-size: 0.72rem; color: #8b9cb3; margin: 0; }
+
+    h1 { font-size: 1.35rem !important; font-weight: 700 !important; letter-spacing: -0.02em; }
     h2, h3 { color: #8b9cb3 !important; font-size: 0.75rem !important;
               text-transform: uppercase; letter-spacing: 0.08em; }
     div[data-testid="stMetric"] {
@@ -42,61 +73,104 @@ st.markdown("""
         border: 1px solid rgba(34,197,94,0.25);
         border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem;
     }
-    .hero h2 { color: #f0f4f8 !important; font-size: 1.4rem !important;
-               text-transform: none !important; letter-spacing: -0.03em !important; }
+    .hero h2 { color: #f0f4f8 !important; font-size: 1.5rem !important;
+               text-transform: none !important; letter-spacing: -0.03em !important; margin: 0 !important; }
     .hero p { color: rgba(255,255,255,0.8); margin: 0.25rem 0 0; font-size: 0.9rem; }
+
     .card-box {
         background: #161d27; border: 1px solid rgba(255,255,255,0.08);
         border-radius: 16px; padding: 1rem 1.15rem; margin-bottom: 1rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
     }
-    .stButton > button {
+    .card-box .section-label {
+        font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.08em; color: #22c55e; margin-bottom: 0.85rem;
+    }
+
+    .stButton > button:not([data-testid*="nav_"]) {
         border-radius: 10px; font-weight: 600; border: none;
         background: linear-gradient(135deg, #16a34a, #22c55e); color: #052e16;
+        width: 100%;
     }
-    .stButton > button[kind="secondary"] {
+    .stButton > button[kind="secondary"]:not([data-testid*="nav_"]) {
         background: #121820; color: #f0f4f8;
         border: 1px solid rgba(255,255,255,0.08);
     }
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"] .stButton > button {
-        min-height: 52px; font-size: 0.72rem;
-    }
-    /* Fixed bottom navbar */
-    #nav-marker ~ div[data-testid="stHorizontalBlock"] {
+
+    /* Bottom tab bar — works locally + on Streamlit Cloud (see #gym-nav-fixed-root) */
+    #gym-nav-fixed-root {
         position: fixed !important;
         bottom: 0 !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: 100% !important;
-        max-width: 540px !important;
+        left: 0 !important;
+        right: 0 !important;
         z-index: 999999 !important;
+        margin: 0 !important;
+        padding: 0.35rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom, 0px)) !important;
         background: rgba(14, 18, 26, 0.96) !important;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-        padding: 0.45rem 0.75rem calc(0.55rem + env(safe-area-inset-bottom, 0px)) !important;
-        margin: 0 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
     }
-    #nav-marker ~ div[data-testid="stHorizontalBlock"] button {
+    #gym-nav-fixed-root [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        max-width: 540px !important;
+        margin: 0 auto !important;
+        gap: 0 !important;
+    }
+    #gym-nav-fixed-root [data-testid="column"] {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        padding: 0 2px !important;
+    }
+    #gym-nav-fixed-root [data-testid="stRadio"] {
+        max-width: 540px;
+        margin: 0 auto;
+    }
+    #gym-nav-fixed-root [data-testid="stRadio"] > div,
+    #gym-nav-fixed-root [data-testid="stRadio"] [role="radiogroup"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: space-around !important;
+        width: 100% !important;
+        gap: 0 !important;
+    }
+    #gym-nav-fixed-root [data-testid="stRadio"] label {
+        flex: 1 1 0 !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0.35rem 0.15rem !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-size: 0.62rem !important;
+        font-weight: 600 !important;
+        color: #8b9cb3 !important;
+        white-space: pre-line !important;
+        text-align: center !important;
+        line-height: 1.2 !important;
+    }
+    #gym-nav-fixed-root [data-testid="stRadio"] label:has(input:checked) {
+        color: #22c55e !important;
+    }
+    #gym-nav-fixed-root .stButton > button {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        min-height: 52px !important;
         background: transparent !important;
         color: #8b9cb3 !important;
         border: none !important;
         box-shadow: none !important;
-        white-space: pre-line;
-        line-height: 1.2;
-        min-height: 56px !important;
-        font-size: 0.65rem !important;
-        font-weight: 600 !important;
+        font-size: 0.62rem !important;
+        white-space: pre-line !important;
     }
-    #nav-marker ~ div[data-testid="stHorizontalBlock"] .nav-active button {
-        background: rgba(34, 197, 94, 0.15) !important;
-        color: #22c55e !important;
-        border: 1px solid rgba(34, 197, 94, 0.35) !important;
+    @media (max-width: 480px) {
+        .block-container { padding-left: 0.85rem !important; padding-right: 0.85rem !important; }
     }
-    .nav-active button { background: rgba(34,197,94,0.2) !important;
-                          color: #22c55e !important;
-                          border: 1px solid rgba(34,197,94,0.4) !important; }
-    .caption-muted { color: #8b9cb3; font-size: 0.8rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -110,81 +184,179 @@ if "lang" not in st.session_state:
 today_s = date.today().isoformat()
 
 
+PAGE_NAMES = [name for name, _ in NAV_ITEMS]
+PAGE_ICONS = dict(NAV_ITEMS)
+
+
+def _nav_label(name: str) -> str:
+    return f"{PAGE_ICONS[name]}\n{name}"
+
+
 def nav_bar():
-    pages = ["Home", "Dashboard", "Report", "Profile"]
-    icons = {"Home": "🏠", "Dashboard": "📊", "Report": "📈", "Profile": "👤"}
-    st.markdown('<div id="nav-marker"></div>', unsafe_allow_html=True)
-    cols = st.columns(4)
-    for col, name in zip(cols, pages):
-        with col:
-            cls = "nav-active" if st.session_state.page == name else ""
-            st.markdown(f'<div class="{cls}">', unsafe_allow_html=True)
-            if st.button(f"{icons[name]}\n{name}", key=f"nav_{name}", use_container_width=True):
-                st.session_state.page = name
-                st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+    """Horizontal radio tab bar — stays in one row on mobile (unlike 4 st.buttons in columns)."""
+    st.markdown('<div id="gym-bottom-nav-anchor" hidden></div>', unsafe_allow_html=True)
+    idx = PAGE_NAMES.index(st.session_state.page) if st.session_state.page in PAGE_NAMES else 0
+    selected = st.radio(
+        "App navigation",
+        PAGE_NAMES,
+        index=idx,
+        horizontal=True,
+        label_visibility="collapsed",
+        format_func=_nav_label,
+    )
+    if selected != st.session_state.page:
+        st.session_state.page = selected
+        st.rerun()
+
+
+def pin_bottom_nav():
+    """Streamlit Cloud often splits anchor & radio into sibling blocks; CSS :has() then fails."""
+    components.html(
+        """
+<script>
+(function () {
+  const doc = window.parent.document;
+
+  function findNavRoot(anchor) {
+    let block = anchor.closest("[data-testid='stVerticalBlock']");
+    if (!block) return null;
+    if (block.querySelector("[data-testid='stRadio']")) return block;
+    let sib = block;
+    for (let i = 0; i < 8; i++) {
+      sib = sib.nextElementSibling;
+      if (!sib) break;
+      if (sib.querySelector("[data-testid='stRadio']")) return sib;
+    }
+    return block;
+  }
+
+  function apply() {
+    const anchor = doc.getElementById("gym-bottom-nav-anchor");
+    if (!anchor) return;
+    const anchorBlock = anchor.closest("[data-testid='stVerticalBlock']");
+    const root = findNavRoot(anchor);
+    if (!root) return;
+
+    if (anchorBlock && anchorBlock !== root) {
+      anchorBlock.style.cssText = "height:0!important;margin:0!important;padding:0!important;border:none!important;overflow:hidden!important;";
+    }
+
+    root.id = "gym-nav-fixed-root";
+
+    const row = root.querySelector("[data-testid='stHorizontalBlock']");
+    if (row) {
+      row.style.display = "flex";
+      row.style.flexDirection = "row";
+      row.style.flexWrap = "nowrap";
+      root.querySelectorAll("[data-testid='column']").forEach((c) => {
+        c.style.flex = "1 1 0";
+        c.style.minWidth = "0";
+      });
+    }
+    const radio = root.querySelector("[data-testid='stRadio']");
+    if (radio) {
+      const group = radio.querySelector("[role='radiogroup']") || radio.firstElementChild;
+      if (group) {
+        group.style.display = "flex";
+        group.style.flexDirection = "row";
+        group.style.flexWrap = "nowrap";
+        group.style.justifyContent = "space-around";
+        group.style.width = "100%";
+      }
+    }
+  }
+
+  apply();
+  setTimeout(apply, 80);
+  setTimeout(apply, 400);
+  new MutationObserver(apply).observe(doc.body, { childList: true, subtree: true });
+})();
+</script>
+        """,
+        height=0,
+    )
+
+
+def app_header():
+    titles = {
+        "Home": "Home",
+        "Dashboard": "Dashboard",
+        "Report": "Report",
+        "Profile": "Profile",
+    }
+    title = titles.get(st.session_state.page, "Gym Tracker")
+    today_label = date.today().strftime("%a, %d %b")
+    st.markdown(
+        f'<div class="app-topbar">'
+        f'<p class="app-title">{title}</p>'
+        f'<p class="app-date">{today_label}</p>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def page_home():
     d = svc.get_dashboard(local_date=today_s)
+    rest = ' <span style="opacity:0.85">· Rest day</span>' if d["is_rest_day"] else ""
     st.markdown(
         f'<div class="hero"><h2>{d["day_name"]}</h2>'
-        f'<p>{d["muscle_group"]}'
-        f'{" · Rest day" if d["is_rest_day"] else ""}</p></div>',
+        f'<p>{d["muscle_group"]}{rest}</p></div>',
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.markdown("**QUICK LOG**")
-    c1, c2 = st.columns(2)
-    with c1:
-        w = st.number_input("Weight (kg)", value=float(d["current_weight"] or 86.0), step=0.1, key="qh_w")
-        if st.button("Save weight", key="qh_w_btn"):
-            svc.save_weight(today_s, w)
-            st.success("Saved!")
-            st.rerun()
-        cal = st.number_input("Calories", value=float(d["calories"] or 0), step=1.0, key="qh_cal")
-        if st.button("Save calories", key="qh_cal_btn"):
-            food, daily = svc.get_food(today_s)
-            food, daily = food or {}, daily or {}
-            svc.save_food(today_s, cal, food.get("protein_g"), food.get("carbs_g"),
-                          food.get("fat_g"), food.get("water_liters"),
-                          daily.get("steps"), daily.get("sleep_hours"), daily.get("notes") or "")
-            st.success("Saved!")
-            st.rerun()
-    with c2:
-        prot = st.number_input("Protein (g)", value=float(d["protein"] or 0), step=1.0, key="qh_p")
-        if st.button("Save protein", key="qh_p_btn"):
-            food, daily = svc.get_food(today_s)
-            food, daily = food or {}, daily or {}
-            svc.save_food(today_s, food.get("calories"), prot, food.get("carbs_g"),
-                          food.get("fat_g"), food.get("water_liters"),
-                          daily.get("steps"), daily.get("sleep_hours"), daily.get("notes") or "")
-            st.success("Saved!")
-            st.rerun()
-        bike = st.number_input("Bicycle (min)", min_value=0, value=0, key="qh_bike")
-        if st.button("Save bicycle", key="qh_bike_btn") and bike > 0:
-            svc.save_cardio(today_s, "bicycle", bike, "moderate")
-            st.success("Saved!")
-            st.rerun()
-        swim = st.number_input("Swim (min)", min_value=0, value=0, key="qh_swim")
-        if st.button("Save swim", key="qh_swim_btn") and swim > 0:
-            svc.save_swimming(today_s, swim, "moderate")
-            st.success("Saved!")
-            st.rerun()
-        steps = st.number_input("Steps", min_value=0, value=int(d.get("steps") or 0), key="qh_steps")
-        if st.button("Save steps", key="qh_steps_btn") and steps > 0:
-            food, daily = svc.get_food(today_s)
-            food, daily = food or {}, daily or {}
-            svc.save_food(today_s, food.get("calories"), food.get("protein_g"), food.get("carbs_g"),
-                          food.get("fat_g"), food.get("water_liters"), steps,
-                          daily.get("sleep_hours"), daily.get("notes") or "")
-            st.success("Saved!")
-            st.rerun()
+    st.markdown('<div class="card-box"><div class="section-label">Quick log</div>', unsafe_allow_html=True)
+
+    w = st.number_input("Weight (kg)", value=float(d["current_weight"] or 86.0), step=0.1, key="qh_w")
+    if st.button("Save weight", key="qh_w_btn"):
+        svc.save_weight(today_s, w)
+        st.success("Saved!")
+        st.rerun()
+
+    cal = st.number_input("Calories", value=float(d["calories"] or 0), step=1.0, key="qh_cal")
+    if st.button("Save calories", key="qh_cal_btn"):
+        food, daily = svc.get_food(today_s)
+        food, daily = food or {}, daily or {}
+        svc.save_food(today_s, cal, food.get("protein_g"), food.get("carbs_g"),
+                      food.get("fat_g"), food.get("water_liters"),
+                      daily.get("steps"), daily.get("sleep_hours"), daily.get("notes") or "")
+        st.success("Saved!")
+        st.rerun()
+
+    prot = st.number_input("Protein (g)", value=float(d["protein"] or 0), step=1.0, key="qh_p")
+    if st.button("Save protein", key="qh_p_btn"):
+        food, daily = svc.get_food(today_s)
+        food, daily = food or {}, daily or {}
+        svc.save_food(today_s, food.get("calories"), prot, food.get("carbs_g"),
+                      food.get("fat_g"), food.get("water_liters"),
+                      daily.get("steps"), daily.get("sleep_hours"), daily.get("notes") or "")
+        st.success("Saved!")
+        st.rerun()
+
+    bike = st.number_input("Bicycle (min)", min_value=0, value=0, key="qh_bike")
+    if st.button("Save bicycle", key="qh_bike_btn") and bike > 0:
+        svc.save_cardio(today_s, "bicycle", bike, "moderate")
+        st.success("Saved!")
+        st.rerun()
+
+    swim = st.number_input("Swim (min)", min_value=0, value=0, key="qh_swim")
+    if st.button("Save swim", key="qh_swim_btn") and swim > 0:
+        svc.save_swimming(today_s, swim, "moderate")
+        st.success("Saved!")
+        st.rerun()
+
+    steps = st.number_input("Steps", min_value=0, value=int(d.get("steps") or 0), key="qh_steps")
+    if st.button("Save steps", key="qh_steps_btn") and steps > 0:
+        food, daily = svc.get_food(today_s)
+        food, daily = food or {}, daily or {}
+        svc.save_food(today_s, food.get("calories"), food.get("protein_g"), food.get("carbs_g"),
+                      food.get("fat_g"), food.get("water_liters"), steps,
+                      daily.get("sleep_hours"), daily.get("notes") or "")
+        st.success("Saved!")
+        st.rerun()
+
     st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown('<div class="card-box">', unsafe_allow_html=True)
-    st.markdown("**TODAY'S EXERCISES**")
+    st.markdown('<div class="card-box"><div class="section-label">Today\'s exercises</div>', unsafe_allow_html=True)
     for p in d["plan"]:
         st.markdown(f"- {p['exercise_name']} · {p['sets_target']}×{p['reps_target']}")
     st.markdown("</div>", unsafe_allow_html=True)
@@ -192,7 +364,6 @@ def page_home():
 
 def page_dashboard():
     d = svc.get_dashboard(local_date=today_s)
-    st.title("Dashboard")
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Current", f"{d['current_weight']} kg")
@@ -201,7 +372,7 @@ def page_dashboard():
     st.progress(d["progress_percent"] / 100)
     st.caption(f"7-day avg: {d['weight_7day_avg'] or '—'} kg · {d['pace_message']}")
 
-    st.markdown("**TODAY AT A GLANCE**")
+    st.markdown('<div class="card-box"><div class="section-label">Today at a glance</div>', unsafe_allow_html=True)
     r1, r2, r3 = st.columns(3)
     r1.metric("Calories", d["calories"] or "—")
     r2.metric("Protein", d["protein"] or "—")
@@ -210,14 +381,16 @@ def page_dashboard():
     r4.metric("Cardio", f"{int(d['cardio_minutes'])} min")
     r5.metric("Swim", f"{int(d['swimming_minutes'])} min")
     r6.metric("Burned", d["calories_burned_estimate"])
+    st.markdown("</div>", unsafe_allow_html=True)
 
     history, avg7 = svc.get_weight_history()
     if history:
-        st.markdown("**WEIGHT CHART**")
+        st.markdown('<div class="card-box"><div class="section-label">Weight chart</div>', unsafe_allow_html=True)
         df = pd.DataFrame(history).sort_values("log_date")
         st.line_chart(df.set_index("log_date")["weight_kg"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("**WORKOUT**")
+    st.markdown('<div class="card-box"><div class="section-label">Workout</div>', unsafe_allow_html=True)
     data = svc.get_workout_today(local_date=today_s)
     st.caption(f"{data['day_name']} · {data['plan'][0]['muscle_group'] if data['plan'] else ''}")
     for ex in (data["exercises"] or [])[:5]:
@@ -225,11 +398,12 @@ def page_dashboard():
     if data["exercises"] and st.button("Log workout sets →"):
         st.session_state.page = "Profile"
         st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def page_report():
-    st.title("Report")
     r = svc.get_weekly_report(7)
+    st.markdown('<div class="card-box"><div class="section-label">Weekly summary</div>', unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     c1.metric("Avg weight", f"{r['average_weight'] or '—'} kg")
     c2.metric("Workouts", r["total_workouts"])
@@ -238,6 +412,7 @@ def page_report():
     c4.metric("Cardio min", int(r["total_cardio_minutes"]))
     c5.metric("Avg kcal", r["average_calories"] or "—")
     c6.metric("Avg protein", f"{r['average_protein'] or '—'} g")
+    st.markdown("</div>", unsafe_allow_html=True)
 
     if st.button("Export CSV"):
         export_all_csv()
@@ -247,7 +422,6 @@ def page_report():
 
 
 def page_profile():
-    st.title("Profile")
     conn = get_connection()
     user = svc.get_user(conn)
     conn.close()
@@ -265,6 +439,7 @@ def page_profile():
         ["Course plan", "Workout", "Food", "Weight"],
         horizontal=True,
         key="profile_section",
+        label_visibility="collapsed",
     )
 
     lang = st.selectbox("Course plan language", list(LANGS.keys()),
@@ -323,12 +498,9 @@ def page_profile():
             df = pd.DataFrame(history).sort_values("log_date")
             st.line_chart(df.set_index("log_date")["weight_kg"])
 
-    st.markdown("---")
-    st.caption("Streamlit Cloud · For the full PWA with phone footer, run Flask locally: python app.py")
 
-
-# --- Render ---
-st.caption(date.today().strftime("%A, %d %b %Y"))
+# --- Render: content first, tab bar last (pinned via JS on Streamlit Cloud) ---
+app_header()
 
 if st.session_state.page == "Home":
     page_home()
@@ -340,3 +512,4 @@ else:
     page_profile()
 
 nav_bar()
+pin_bottom_nav()
