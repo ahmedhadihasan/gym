@@ -14,15 +14,9 @@ from utils.met import (
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "gym-tracker-local"
 
+from utils.dates import resolve_today, today_iso, weekday_index
+
 DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-
-
-def today_str():
-    return date.today().isoformat()
-
-
-def weekday():
-    return date.today().weekday()
 
 
 def get_user(conn):
@@ -134,8 +128,8 @@ def api_dashboard():
     conn = get_connection()
     try:
         user = get_user(conn)
-        t = today_str()
-        wd = weekday()
+        t = today_iso(request)
+        wd = weekday_index(request)
         plan = conn.execute(
             "SELECT * FROM weekly_plan WHERE day_of_week = ? ORDER BY sort_order",
             (wd,),
@@ -259,7 +253,7 @@ def api_weight():
             conn.execute(
                 """INSERT INTO body_weight (log_date, weight_kg) VALUES (?, ?)
                    ON CONFLICT(user_id, log_date) DO UPDATE SET weight_kg = excluded.weight_kg""",
-                (data.get("log_date", today_str()), float(data["weight_kg"])),
+                (data.get("log_date", today_iso(request)), float(data["weight_kg"])),
             )
             conn.execute(
                 "UPDATE users SET current_weight_kg = ? WHERE id = 1",
@@ -285,8 +279,8 @@ def api_weight():
 def api_workout_today():
     conn = get_connection()
     try:
-        wd = weekday()
-        t = today_str()
+        wd = weekday_index(request)
+        t = today_iso(request)
         plan = conn.execute(
             "SELECT * FROM weekly_plan WHERE day_of_week = ? ORDER BY sort_order",
             (wd,),
@@ -417,14 +411,14 @@ def api_cardio():
             conn.execute(
                 """INSERT INTO cardio_logs (log_date, cardio_type, duration_minutes, intensity,
                    calories_burned_estimate, source, notes) VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (data.get("log_date", today_str()), ctype, mins, intensity, cal,
+                (data.get("log_date", today_iso(request)), ctype, mins, intensity, cal,
                  data.get("source", "manual"), data.get("notes", "")),
             )
             conn.commit()
             export_all_csv()
             return jsonify({"ok": True, "calories_estimate": cal})
 
-        t = request.args.get("date", today_str())
+        t = request.args.get("date") or today_iso(request)
         rows = conn.execute(
             "SELECT * FROM cardio_logs WHERE log_date = ? ORDER BY id", (t,)
         ).fetchall()
@@ -452,13 +446,13 @@ def api_swimming():
             conn.execute(
                 """INSERT INTO swimming_logs (log_date, swimming_minutes, intensity,
                    calories_burned_estimate, notes) VALUES (?, ?, ?, ?, ?)""",
-                (data.get("log_date", today_str()), mins, intensity, cal, data.get("notes", "")),
+                (data.get("log_date", today_iso(request)), mins, intensity, cal, data.get("notes", "")),
             )
             conn.commit()
             export_all_csv()
             return jsonify({"ok": True, "calories_estimate": cal})
 
-        t = request.args.get("date", today_str())
+        t = request.args.get("date") or today_iso(request)
         rows = conn.execute(
             "SELECT * FROM swimming_logs WHERE log_date = ? ORDER BY id", (t,)
         ).fetchall()
@@ -475,7 +469,7 @@ def api_food():
     try:
         if request.method == "POST":
             data = request.json
-            t = data.get("log_date", today_str())
+            t = data.get("log_date", today_iso(request))
             conn.execute(
                 """INSERT INTO food_logs (log_date, calories, protein_g, carbs_g, fat_g, water_liters, notes)
                    VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -500,7 +494,7 @@ def api_food():
             export_all_csv()
             return jsonify({"ok": True})
 
-        t = request.args.get("date", today_str())
+        t = request.args.get("date") or today_iso(request)
         food = conn.execute("SELECT * FROM food_logs WHERE log_date = ?", (t,)).fetchone()
         daily = conn.execute("SELECT * FROM daily_logs WHERE log_date = ?", (t,)).fetchone()
         return jsonify({

@@ -4,8 +4,8 @@
   "description": "Personal fat-loss gym tracking PWA",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#1a7f4e",
+  "background_color": "#1a1f2e",
+  "theme_color": "#1a1f2e",
   "orientation": "portrait",
   "icons": [
     {

@@ -1,5 +1,9 @@
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function toast(msg) {
@@ -11,8 +15,17 @@ function toast(msg) {
 }
 
 async function api(url, opts = {}) {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...opts.headers },
+  const localDate = todayISO();
+  let fetchUrl = url;
+  if (!url.includes('date=')) {
+    fetchUrl += (url.includes('?') ? '&' : '?') + `date=${localDate}`;
+  }
+  const res = await fetch(fetchUrl, {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Local-Date': localDate,
+      ...opts.headers,
+    },
     ...opts,
   });
   return res.json();

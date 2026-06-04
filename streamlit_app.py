@@ -47,6 +47,9 @@ st.session_state.lang = st.sidebar.selectbox(
 )
 lang = st.session_state.lang
 
+today = st.sidebar.date_input("Today’s date", value=date.today())
+today_s = today.isoformat()
+
 menu = st.sidebar.radio(
     "Menu",
     ["Dashboard", "Course Plan", "Weight", "Workout", "Cardio", "Swimming", "Food", "Report"],
@@ -54,7 +57,7 @@ menu = st.sidebar.radio(
 
 if menu == "Dashboard":
     st.title("Dashboard")
-    d = svc.get_dashboard()
+    d = svc.get_dashboard(local_date=today_s)
     st.subheader(f"{d['day_name']} — {d['muscle_group']}")
     if d["is_rest_day"]:
         st.info("Rest day: walking 6k–10k steps, optional easy swim.")
@@ -121,7 +124,7 @@ elif menu == "Weight":
 
 elif menu == "Workout":
     st.title("Workout")
-    data = svc.get_workout_today()
+    data = svc.get_workout_today(local_date=today_s)
     st.subheader(f"{data['day_name']}")
     if not data["exercises"]:
         st.info("Rest day or no weight exercises today.")

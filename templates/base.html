@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#1a7f4e">
+  <meta name="theme-color" content="#1a1f2e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="/manifest.json">
@@ -20,12 +20,22 @@
   <main>
     {% block content %}{% endblock %}
   </main>
-  <nav class="bottom-nav">
-    <a href="/" class="{% if active == 'home' %}active{% endif %}"><span class="icon">🏠</span>Home</a>
-    <a href="/workout" class="{% if active == 'workout' %}active{% endif %}"><span class="icon">💪</span>Workout</a>
-    <a href="/weight" class="{% if active == 'weight' %}active{% endif %}"><span class="icon">⚖️</span>Weight</a>
-    <a href="/food" class="{% if active == 'food' %}active{% endif %}"><span class="icon">🍽️</span>Food</a>
-    <a href="/report" class="{% if active == 'report' %}active{% endif %}"><span class="icon">📊</span>Report</a>
+  <nav class="bottom-nav" id="bottom-nav" aria-label="Main navigation">
+    <a href="/" class="nav-btn{% if active == 'home' %} active{% endif %}" data-nav="home" aria-label="Home">
+      <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
+    </a>
+    <a href="/workout" class="nav-btn{% if active == 'workout' %} active{% endif %}" data-nav="workout" aria-label="Workout">
+      <span class="nav-icon">💪</span><span class="nav-label">Workout</span>
+    </a>
+    <a href="/weight" class="nav-btn{% if active == 'weight' %} active{% endif %}" data-nav="weight" aria-label="Weight">
+      <span class="nav-icon">⚖️</span><span class="nav-label">Weight</span>
+    </a>
+    <a href="/food" class="nav-btn{% if active == 'food' %} active{% endif %}" data-nav="food" aria-label="Food">
+      <span class="nav-icon">🍽️</span><span class="nav-label">Food</span>
+    </a>
+    <a href="/report" class="nav-btn{% if active == 'report' %} active{% endif %}" data-nav="report" aria-label="Report">
+      <span class="nav-icon">📊</span><span class="nav-label">Report</span>
+    </a>
   </nav>
   <div class="toast" id="toast"></div>
   <script src="/static/js/app.js"></script>
@@ -34,9 +44,26 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      document.body.classList.add('is-pwa');
+    }
     document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-GB', {
       weekday: 'long', day: 'numeric', month: 'short', year: 'numeric'
     });
+    (function () {
+      const map = {
+        '/': 'home', '/workout': 'workout', '/weight': 'weight',
+        '/food': 'food', '/report': 'report',
+      };
+      const key = map[location.pathname];
+      if (!key) return;
+      document.querySelectorAll('#bottom-nav .nav-btn').forEach((el) => {
+        const on = el.dataset.nav === key;
+        el.classList.toggle('active', on);
+        if (on) el.setAttribute('aria-current', 'page');
+        else el.removeAttribute('aria-current');
+      });
+    })();
   </script>
 </body>
 </html>

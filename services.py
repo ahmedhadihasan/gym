@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 from utils.csv_export import export_all_csv, generate_chatgpt_report, import_csv_file
 from utils.db import BASE_DIR, get_connection, init_db, row_to_dict
+from utils.dates import today_iso, weekday_index
 from utils.met import (
     estimate_cardio_calories,
     estimate_swimming_calories,
@@ -26,14 +27,6 @@ CARDIO_SKIP = {"Bicycle", "Elliptical", "Incline Walk", "Stair Climber", "Walkin
 def ensure_database():
     if not os.path.exists(BASE_DIR / "gym_tracker.db"):
         init_db()
-
-
-def today_str():
-    return date.today().isoformat()
-
-
-def weekday():
-    return date.today().weekday()
 
 
 def get_user(conn):
@@ -77,13 +70,13 @@ def loss_pace_feedback(weekly_change_kg):
     return "good", "Good pace for fat loss (0.25–1 kg/week)"
 
 
-def get_dashboard():
+def get_dashboard(local_date=None):
     ensure_database()
     conn = get_connection()
     try:
         user = get_user(conn)
-        t = today_str()
-        wd = weekday()
+        t = today_iso(explicit_date=local_date)
+        wd = weekday_index(explicit_date=local_date)
         plan = conn.execute(
             "SELECT * FROM weekly_plan WHERE day_of_week = ? ORDER BY sort_order", (wd,)
         ).fetchall()
@@ -185,12 +178,12 @@ def get_weight_history():
         conn.close()
 
 
-def get_workout_today():
+def get_workout_today(local_date=None):
     ensure_database()
     conn = get_connection()
     try:
-        wd = weekday()
-        t = today_str()
+        wd = weekday_index(explicit_date=local_date)
+        t = today_iso(explicit_date=local_date)
         plan_list = [row_to_dict(p) for p in conn.execute(
             "SELECT * FROM weekly_plan WHERE day_of_week = ? ORDER BY sort_order", (wd,)
         ).fetchall()]
