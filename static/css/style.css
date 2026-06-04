@@ -60,8 +60,39 @@ header.app-header .sub {
 
 main {
   padding: 1rem;
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  main {
+    max-width: 720px;
+    padding: 1.25rem 2rem 5rem;
+  }
+  .stat-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  nav.bottom-nav {
+    max-width: 520px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-radius: 14px 14px 0 0;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+}
+
+@media (min-width: 1024px) {
+  main {
+    max-width: 880px;
+  }
+  .quick-log.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.5rem;
+  }
 }
 
 .card {
@@ -204,6 +235,7 @@ nav.bottom-nav a {
   text-align: center;
   padding: 0.25rem 0.5rem;
   flex: 1;
+  text-decoration: none;
 }
 
 nav.bottom-nav a.active {
@@ -445,7 +477,105 @@ textarea {
   background: var(--green-dim);
 }
 
-nav.bottom-nav a {
-  font-size: 0.6rem;
-  padding: 0.2rem 0.25rem;
+.card-compact {
+  padding: 0.85rem 1rem;
+}
+
+.card-compact h2 {
+  margin-bottom: 0.5rem;
+}
+
+.caption {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.text-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--blue);
+}
+
+.checklist-compact li {
+  padding: 0.4rem 0;
+  font-size: 0.88rem;
+}
+
+.quick-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quick-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.quick-row label {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.quick-row input,
+.quick-row select {
+  margin: 0;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+}
+
+.quick-row-full {
+  grid-template-columns: 5.5rem 1fr auto;
+}
+
+.quick-row-ex {
+  grid-template-columns: 1fr 4rem 4rem 3.5rem;
+  gap: 0.35rem;
+}
+
+.quick-row-ex .ex-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-row-ex .ex-last {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+  color: var(--blue);
+  margin: -0.25rem 0 0.15rem;
+}
+
+.btn-save {
+  min-height: 44px;
+  padding: 0 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--green);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-save:active {
+  opacity: 0.85;
+}
+
+.chart-sm {
+  height: 160px;
+}
+
+.stat-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+input[type="number"] {
+  margin-bottom: 0;
 }

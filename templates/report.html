@@ -1,41 +1,27 @@
 {% extends "base.html" %}
 {% set active = 'report' %}
 {% block title %}Report — Gym Tracker{% endblock %}
-{% block header %}Weekly Report{% endblock %}
+{% block header %}Report{% endblock %}
 {% block content %}
-<div class="card">
-  <h2>Last 7 Days</h2>
-  <div class="stat-grid" id="weekly-stats">
-    <div class="stat"><div class="value" id="r-avg-w">—</div><div class="label">Avg weight</div></div>
-    <div class="stat"><div class="value" id="r-workouts">0</div><div class="label">Workouts</div></div>
-    <div class="stat"><div class="value" id="r-swim">0</div><div class="label">Swim min</div></div>
-    <div class="stat"><div class="value" id="r-cardio">0</div><div class="label">Cardio min</div></div>
-    <div class="stat"><div class="value" id="r-cal">—</div><div class="label">Avg calories</div></div>
-    <div class="stat"><div class="value" id="r-prot">—</div><div class="label">Avg protein</div></div>
+<div class="card card-compact">
+  <h2>Last 7 days</h2>
+  <div class="stat-grid stat-grid-3">
+    <div class="stat"><div class="value" id="r-avg-w">—</div><div class="label">avg kg</div></div>
+    <div class="stat"><div class="value" id="r-workouts">0</div><div class="label">workouts</div></div>
+    <div class="stat"><div class="value" id="r-swim">0</div><div class="label">swim</div></div>
+    <div class="stat"><div class="value" id="r-cardio">0</div><div class="label">cardio</div></div>
+    <div class="stat"><div class="value" id="r-cal">—</div><div class="label">avg kcal</div></div>
+    <div class="stat"><div class="value" id="r-prot">—</div><div class="label">protein</div></div>
   </div>
 </div>
 <div class="card">
-  <h2>CSV & ChatGPT</h2>
-  <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Data auto-saves to <code>exports/</code> folder. Use these buttons to refresh or share.</p>
-  <div class="btn-row">
-    <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
-    <button class="btn btn-secondary" onclick="importCSV()">Import CSV</button>
-    <button class="btn btn-blue" onclick="chatGPTReport()">Generate ChatGPT Report</button>
-  </div>
-  <label style="margin-top:1rem">Import file</label>
-  <select id="import-file">
-    <option value="daily_summary.csv">daily_summary.csv</option>
-    <option value="workout_log.csv">workout_log.csv</option>
-    <option value="cardio_log.csv">cardio_log.csv</option>
-    <option value="swimming_log.csv">swimming_log.csv</option>
-  </select>
-  <a href="/exports/daily_summary.csv" class="btn btn-secondary" download>Download daily_summary.csv</a>
+  <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
+  <button class="btn btn-secondary" onclick="chatGPTReport()">ChatGPT report</button>
 </div>
 <div class="modal" id="report-modal">
   <div class="modal-content">
-    <h3>ChatGPT Report</h3>
     <pre class="report-pre" id="report-text"></pre>
-    <button class="btn btn-primary" onclick="copyReport()">Copy to Clipboard</button>
+    <button class="btn btn-primary" onclick="copyReport()">Copy</button>
     <button class="btn btn-secondary" onclick="closeModal('report-modal')">Close</button>
   </div>
 </div>

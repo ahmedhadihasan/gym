@@ -3,12 +3,12 @@
 {% block title %}Workout — Gym Tracker{% endblock %}
 {% block header %}Workout{% endblock %}
 {% block content %}
-<div class="card">
+<div class="card card-compact">
   <h2 id="workout-day">Today</h2>
-  <p id="workout-muscle" style="color:var(--muted);margin-bottom:1rem"></p>
+  <p id="workout-muscle" class="caption"></p>
 </div>
-<div id="exercise-list"></div>
-<div id="workout-empty" class="empty" style="display:none">Rest day — walking & optional swim only.</div>
+<div id="exercise-list" class="quick-log"></div>
+<div id="workout-empty" class="empty" style="display:none">Rest day.</div>
 {% endblock %}
 {% block scripts %}
 <script>initWorkoutPage();</script>
