@@ -284,59 +284,134 @@ async function loadWeightHistory() {
   });
 }
 
-async function initWorkoutPage() {
-  const data = await api('/api/workout/today');
-  document.getElementById('workout-day').textContent = data.day_name;
+function workoutDateISO() {
+  const el = document.getElementById('workout-date');
+  return el?.value || todayISO();
+}
+
+async function loadWorkoutPage() {
+  const date = workoutDateISO();
+  const data = await api(`/api/workout/today?date=${date}`);
+  document.getElementById('workout-day').textContent = `${data.day_name} · ${date}`;
   document.getElementById('workout-muscle').textContent =
-    `${data.plan?.[0]?.muscle_group || ''} · tap Save per exercise`;
+    `${data.plan?.[0]?.muscle_group || ''} · save each set`;
+
+  const startBtn = document.getElementById('workout-start-btn');
+  if (startBtn) {
+    startBtn.style.display = data.session_id ? 'none' : 'inline-block';
+    startBtn.onclick = async () => {
+      await api(`/api/workout/start?date=${date}`, { method: 'POST' });
+      toast('Session started');
+      loadWorkoutPage();
+    };
+  }
 
   const list = document.getElementById('exercise-list');
   const empty = document.getElementById('workout-empty');
   list.innerHTML = '';
 
-  if (!data.exercises?.length) {
+  if (!data.session_id) {
     empty.style.display = 'block';
+    empty.textContent = 'Tap “Start session” to log this day.';
+    return;
+  }
+
+  const extras = JSON.parse(localStorage.getItem(`workout_extra_${date}`) || '[]');
+  const all = [...(data.exercises || [])];
+  extras.forEach((ex) => {
+    if (!all.find((e) => e.exercise_name === ex.exercise_name)) all.push(ex);
+  });
+
+  if (!all.length) {
+    empty.style.display = 'block';
+    empty.textContent = 'No exercises. Add one above.';
     return;
   }
   empty.style.display = 'none';
 
-  data.exercises.forEach((ex) => {
-    const row = document.createElement('div');
-    row.className = 'quick-row quick-row-ex';
-    const last = ex.last_weight_kg != null
-      ? `Last ${ex.last_weight_kg} kg × ${ex.last_reps || '?'}`
-      : '';
-    const logged = (ex.sets_logged || []).find((x) => x.completed) || ex.sets_logged?.[0] || {};
-    row.innerHTML = `
-      <div class="quick-row quick-row-ex">
-        <span class="ex-name">${ex.exercise_name}</span>
-        <input type="number" step="0.5" class="w-kg" placeholder="kg" value="${logged.weight_kg ?? ex.last_weight_kg ?? ''}">
-        <input type="number" class="w-reps" placeholder="reps" value="${logged.reps ?? ''}">
-        <button type="button" class="btn-save w-save">Save</button>
-        ${last ? `<span class="ex-last">${last} · ${ex.sets_target}×${ex.reps_target}</span>` : ''}
-      </div>`;
-    list.appendChild(row);
+  all.forEach((ex) => {
+    const targetSets = ex.sets_target || 3;
+    const loggedBy = {};
+    (ex.sets_logged || []).forEach((s) => { loggedBy[s.set_number] = s; });
+    const prev = ex.previous_sets || {};
 
-    let setNum = (ex.sets_logged?.length || 0) + 1;
-    row.querySelector('.w-save').onclick = async () => {
-      const kg = parseFloat(row.querySelector('.w-kg').value) || null;
-      const reps = parseInt(row.querySelector('.w-reps').value, 10) || null;
-      await api('/api/workout/set', {
-        method: 'POST',
-        body: JSON.stringify({
-          session_id: data.session_id,
-          exercise_name: ex.exercise_name,
-          set_number: Math.min(setNum, ex.sets_target || 4),
-          weight_kg: kg,
-          reps,
-          completed: true,
-          notes: '',
-        }),
-      });
-      setNum += 1;
-      toast(`${ex.exercise_name} saved`);
-    };
+    const block = document.createElement('div');
+    block.className = 'card card-compact';
+    block.style.marginBottom = '0.75rem';
+    let head = `<h2 style="margin-bottom:0.5rem">${ex.exercise_name}</h2>`;
+    if (ex.previous_session_date) {
+      head += `<p class="caption" style="margin-bottom:0.5rem">Last session: ${ex.previous_session_date}</p>`;
+    }
+    block.innerHTML = head;
+    const inner = document.createElement('div');
+    inner.className = 'quick-log';
+
+    for (let n = 1; n <= targetSets; n += 1) {
+      const logged = loggedBy[n] || {};
+      const prevSet = prev[n];
+      const kgVal = logged.weight_kg ?? prevSet?.weight_kg ?? '';
+      const repsVal = logged.reps ?? prevSet?.reps ?? '';
+      const hint = prevSet
+        ? `<span class="ex-last">Set ${n} last time: ${prevSet.weight_kg ?? '—'} kg × ${prevSet.reps ?? '—'} reps</span>`
+        : '';
+      const row = document.createElement('div');
+      row.className = 'quick-row quick-row-ex';
+      row.innerHTML = `
+        <span class="ex-name">Set ${n}</span>
+        <input type="number" step="0.5" class="w-kg" placeholder="kg" value="${kgVal}">
+        <input type="number" class="w-reps" placeholder="reps" value="${repsVal}">
+        <button type="button" class="btn-save w-save">Save</button>
+        ${hint}`;
+      row.querySelector('.w-save').onclick = async () => {
+        const kg = parseFloat(row.querySelector('.w-kg').value) || null;
+        const reps = parseInt(row.querySelector('.w-reps').value, 10) || null;
+        await api('/api/workout/set', {
+          method: 'POST',
+          body: JSON.stringify({
+            session_id: data.session_id,
+            exercise_name: ex.exercise_name,
+            set_number: n,
+            weight_kg: kg,
+            reps,
+            completed: true,
+            notes: '',
+          }),
+        });
+        toast(`${ex.exercise_name} set ${n} saved`);
+        loadWorkoutPage();
+      };
+      inner.appendChild(row);
+    }
+    block.appendChild(inner);
+    list.appendChild(block);
   });
+}
+
+async function initWorkoutPage() {
+  const dateInput = document.getElementById('workout-date');
+  if (dateInput) {
+    dateInput.value = todayISO();
+    dateInput.addEventListener('change', loadWorkoutPage);
+  }
+  document.getElementById('workout-today-btn')?.addEventListener('click', () => {
+    if (dateInput) dateInput.value = todayISO();
+    loadWorkoutPage();
+  });
+  document.getElementById('workout-add-ex')?.addEventListener('click', () => {
+    const date = workoutDateISO();
+    const name = document.getElementById('workout-new-name')?.value?.trim();
+    const sets = parseInt(document.getElementById('workout-new-sets')?.value, 10) || 3;
+    if (!name) return;
+    const key = `workout_extra_${date}`;
+    const extras = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!extras.find((e) => e.exercise_name === name)) {
+      extras.push({ exercise_name: name, sets_target: sets, reps_target: '12', sets_logged: [], previous_sets: {} });
+      localStorage.setItem(key, JSON.stringify(extras));
+    }
+    document.getElementById('workout-new-name').value = '';
+    loadWorkoutPage();
+  });
+  await loadWorkoutPage();
 }
 
 async function saveCardio(e) {

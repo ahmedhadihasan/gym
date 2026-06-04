@@ -178,6 +178,55 @@ def get_weight_history():
         conn.close()
 
 
+def _previous_sets_by_number(conn, exercise_name, before_date):
+    """Most recent past session's sets for this exercise (per set_number)."""
+    row = conn.execute(
+        """SELECT s.id, s.session_date FROM workout_sessions s
+           JOIN workout_sets ws ON ws.session_id = s.id
+           WHERE ws.exercise_name = ? AND s.session_date < ?
+           AND ws.completed = 1
+           ORDER BY s.session_date DESC LIMIT 1""",
+        (exercise_name, before_date),
+    ).fetchone()
+    if not row:
+        return None, {}
+    sid, session_date = row[0], row[1]
+    sets = conn.execute(
+        """SELECT set_number, weight_kg, reps FROM workout_sets
+           WHERE session_id = ? AND exercise_name = ? ORDER BY set_number""",
+        (sid, exercise_name),
+    ).fetchall()
+    by_num = {
+        s[0]: {"weight_kg": s[1], "reps": s[2], "session_date": session_date}
+        for s in sets
+    }
+    return session_date, by_num
+
+
+def ensure_workout_session(local_date=None, muscle_group=None):
+    """Create workout session for a calendar day if missing."""
+    ensure_database()
+    conn = get_connection()
+    try:
+        wd = weekday_index(explicit_date=local_date)
+        t = today_iso(explicit_date=local_date)
+        plan_list = [row_to_dict(p) for p in conn.execute(
+            "SELECT * FROM weekly_plan WHERE day_of_week = ? ORDER BY sort_order", (wd,)
+        ).fetchall()]
+        session = conn.execute("SELECT * FROM workout_sessions WHERE session_date = ?", (t,)).fetchone()
+        if session:
+            return row_to_dict(session)["id"]
+        mg = muscle_group or (plan_list[0].get("muscle_group") if plan_list else "Workout")
+        session_id = conn.execute(
+            "INSERT INTO workout_sessions (session_date, day_name, muscle_group) VALUES (?, ?, ?)",
+            (t, DAY_NAMES[wd], mg),
+        ).lastrowid
+        conn.commit()
+        return session_id
+    finally:
+        conn.close()
+
+
 def get_workout_today(local_date=None):
     ensure_database()
     conn = get_connection()
@@ -188,23 +237,20 @@ def get_workout_today(local_date=None):
             "SELECT * FROM weekly_plan WHERE day_of_week = ? ORDER BY sort_order", (wd,)
         ).fetchall()]
         session = conn.execute("SELECT * FROM workout_sessions WHERE session_date = ?", (t,)).fetchone()
-        session_id = None
-        if not session and plan_list and wd != 4:
-            mg = plan_list[0].get("muscle_group", "")
-            session_id = conn.execute(
-                "INSERT INTO workout_sessions (session_date, day_name, muscle_group) VALUES (?, ?, ?)",
-                (t, DAY_NAMES[wd], mg),
-            ).lastrowid
-            conn.commit()
-        elif session:
-            session_id = session["id"]
+        session_id = row_to_dict(session)["id"] if session else None
+        seen = set()
         exercises = []
-        for p in plan_list:
+
+        def append_exercise(p):
             ex = p["exercise_name"]
+            if ex in seen:
+                return
+            seen.add(ex)
             if ex in ("Swimming", "Easy Swimming"):
-                continue
+                return
             if "min" in (p.get("reps_target") or "") and ex in CARDIO_SKIP:
-                continue
+                return
+            _prev_date, prev_by_set = _previous_sets_by_number(conn, ex, t)
             last = conn.execute(
                 """SELECT weight_kg, reps FROM workout_sets
                    WHERE exercise_name = ? AND weight_kg IS NOT NULL ORDER BY id DESC LIMIT 1""",
@@ -217,14 +263,44 @@ def get_workout_today(local_date=None):
                        ORDER BY set_number""",
                     (session_id, ex),
                 ).fetchall()
-            if ex in WEIGHT_EXERCISES or p.get("sets_target", 0) > 1:
+            target_sets = int(p.get("sets_target") or 3)
+            if ex in WEIGHT_EXERCISES or target_sets > 1 or sets_done:
                 exercises.append({
                     **p,
+                    "sets_target": target_sets,
                     "last_weight_kg": last["weight_kg"] if last else None,
                     "last_reps": last["reps"] if last else None,
+                    "previous_session_date": _prev_date,
+                    "previous_sets": prev_by_set,
                     "sets_logged": [row_to_dict(s) for s in sets_done],
                 })
-        return {"day_name": DAY_NAMES[wd], "session_id": session_id, "exercises": exercises, "plan": plan_list}
+
+        for p in plan_list:
+            append_exercise(p)
+
+        if session_id:
+            extra_names = conn.execute(
+                """SELECT DISTINCT exercise_name FROM workout_sets WHERE session_id = ?""",
+                (session_id,),
+            ).fetchall()
+            for (ex_name,) in extra_names:
+                if ex_name in seen:
+                    continue
+                append_exercise({
+                    "exercise_name": ex_name,
+                    "sets_target": 3,
+                    "reps_target": "12",
+                    "muscle_group": "Custom",
+                })
+
+        return {
+            "day_name": DAY_NAMES[wd],
+            "session_date": t,
+            "is_rest_day": wd == 4,
+            "session_id": session_id,
+            "exercises": exercises,
+            "plan": plan_list,
+        }
     finally:
         conn.close()
 

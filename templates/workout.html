@@ -2,12 +2,30 @@
 {% block title %}Workout — Gym Tracker{% endblock %}
 {% block header %}Workout{% endblock %}
 {% block content %}
+<div class="card card-compact" style="margin-bottom:1rem">
+  <h2>Workout day</h2>
+  <div class="form-row" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+    <label style="flex:1;min-width:140px">Date
+      <input type="date" id="workout-date" style="width:100%">
+    </label>
+    <button type="button" class="btn btn-ghost" id="workout-today-btn" style="margin-top:1.2rem">Today</button>
+    <button type="button" class="btn" id="workout-start-btn" style="margin-top:1.2rem;display:none">Start session</button>
+  </div>
+</div>
 <div class="hero-today card-compact" style="margin-bottom:1rem;padding:1rem">
   <div class="day-title" id="workout-day">Today</div>
   <div class="day-sub" id="workout-muscle"></div>
 </div>
+<div class="card card-compact" style="margin-bottom:1rem">
+  <h2>Add exercise</h2>
+  <div class="form-row">
+    <input type="text" id="workout-new-name" placeholder="Exercise name">
+    <input type="number" id="workout-new-sets" min="1" max="8" value="3" placeholder="Sets">
+    <button type="button" class="btn" id="workout-add-ex">Add</button>
+  </div>
+</div>
 <div id="exercise-list" class="quick-log"></div>
-<div id="workout-empty" class="empty" style="display:none">Rest day.</div>
+<div id="workout-empty" class="empty" style="display:none">No exercises. Add one above or start a session.</div>
 {% endblock %}
 {% block scripts %}
 <script>initWorkoutPage();</script>

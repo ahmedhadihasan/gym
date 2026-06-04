@@ -291,74 +291,18 @@ def api_weight():
 
 @app.route("/api/workout/today")
 def api_workout_today():
-    conn = get_connection()
-    try:
-        wd = weekday_index(request)
-        t = today_iso(request)
-        plan = conn.execute(
-            "SELECT * FROM weekly_plan WHERE day_of_week = ? ORDER BY sort_order",
-            (wd,),
-        ).fetchall()
-        plan_list = [row_to_dict(p) for p in plan]
+    import services as svc
 
-        session = conn.execute(
-            "SELECT * FROM workout_sessions WHERE session_date = ?", (t,)
-        ).fetchone()
-        session_id = None
-        if not session and plan_list and wd != 4:
-            mg = plan_list[0].get("muscle_group", "")
-            cur = conn.execute(
-                "INSERT INTO workout_sessions (session_date, day_name, muscle_group) VALUES (?, ?, ?)",
-                (t, DAY_NAMES[wd], mg),
-            )
-            session_id = cur.lastrowid
-            conn.commit()
-        elif session:
-            session_id = session["id"]
+    d = request.args.get("date")
+    return jsonify(svc.get_workout_today(local_date=d))
 
-        exercises = []
-        weight_exercises = {
-            "Chest Press", "Incline Chest Press", "Pec Deck Fly", "Lat Pulldown",
-            "Seated Row", "Low Row", "Leg Press", "Leg Curl", "Leg Extension",
-            "Calf Raise", "Shoulder Press", "Lateral Raise", "Rear Delt", "Shrugs",
-            "Biceps Curl", "Hammer Curl", "Triceps Pushdown", "Overhead Triceps Extension",
-            "Overhead Extension",
-        }
-        for p in plan_list:
-            ex = p["exercise_name"]
-            if ex in ("Swimming", "Easy Swimming") or "min" in (p.get("reps_target") or "") and ex in (
-                "Bicycle", "Elliptical", "Incline Walk", "Stair Climber", "Walking"
-            ):
-                continue
-            last = conn.execute(
-                """SELECT weight_kg, reps FROM workout_sets
-                   WHERE exercise_name = ? AND weight_kg IS NOT NULL
-                   ORDER BY id DESC LIMIT 1""",
-                (ex,),
-            ).fetchone()
-            sets_done = []
-            if session_id:
-                sets_done = conn.execute(
-                    """SELECT * FROM workout_sets WHERE session_id = ? AND exercise_name = ?
-                       ORDER BY set_number""",
-                    (session_id, ex),
-                ).fetchall()
-            exercises.append({
-                **p,
-                "last_weight_kg": last["weight_kg"] if last else None,
-                "last_reps": last["reps"] if last else None,
-                "sets_logged": [row_to_dict(s) for s in sets_done],
-                "is_weight_exercise": ex in weight_exercises or p.get("sets_target", 0) > 1,
-            })
 
-        return jsonify({
-            "day_name": DAY_NAMES[wd],
-            "session_id": session_id,
-            "exercises": exercises,
-            "plan": plan_list,
-        })
-    finally:
-        conn.close()
+@app.route("/api/workout/start", methods=["POST"])
+def api_workout_start():
+    import services as svc
+
+    sid = svc.ensure_workout_session(local_date=request.args.get("date"))
+    return jsonify({"ok": True, "session_id": sid})
 
 
 @app.route("/api/workout/set", methods=["POST"])

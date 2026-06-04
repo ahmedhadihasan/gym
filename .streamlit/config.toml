@@ -7,3 +7,6 @@ textColor = "#e6edf3"
 
 [server]
 headless = true
+
+[runner]
+fastReruns = true

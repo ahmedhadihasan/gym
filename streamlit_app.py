@@ -3,7 +3,6 @@ Streamlit Cloud entry point — mirrors the Flask PWA layout.
 Settings → Main file path: streamlit_app.py
 """
 from datetime import date
-from urllib.parse import quote
 
 import pandas as pd
 import streamlit as st
@@ -32,52 +31,57 @@ st.markdown(
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    nav.gym-bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 999999;
-        display: flex;
-        flex-direction: row;
-        align-items: stretch;
-        justify-content: space-around;
-        max-width: 540px;
-        margin: 0 auto;
-        padding: 0.4rem 0.25rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
-        background: rgba(14, 18, 26, 0.97);
+    .gym-bottom-nav-marker { display: none !important; }
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 999999 !important;
+        margin: 0 !important;
+        padding: 0.35rem 0.25rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+        background: rgba(14, 18, 26, 0.97) !important;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
-        box-sizing: border-box;
     }
-    nav.gym-bottom-nav a.gym-nav-item {
-        flex: 1 1 0;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.15rem;
-        padding: 0.35rem 0.1rem;
-        text-decoration: none;
-        color: #8b9cb3;
-        font-size: 0.58rem;
-        font-weight: 600;
-        line-height: 1.1;
-        text-align: center;
-        position: relative;
-        -webkit-tap-highlight-color: transparent;
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        max-width: 540px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        gap: 0 !important;
     }
-    nav.gym-bottom-nav a.gym-nav-item .gym-nav-icon {
-        font-size: 1.15rem;
-        line-height: 1;
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [data-testid="column"] {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        padding: 0 1px !important;
     }
-    nav.gym-bottom-nav a.gym-nav-item.active {
-        color: #22c55e;
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) .stButton > button {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 52px !important;
+        padding: 0.3rem 0.1rem !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #8b9cb3 !important;
+        font-size: 0.58rem !important;
+        font-weight: 600 !important;
+        line-height: 1.1 !important;
+        white-space: pre-line !important;
+        width: 100% !important;
     }
-    nav.gym-bottom-nav a.gym-nav-item.active::before {
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) .stButton > button[kind="primary"] {
+        color: #22c55e !important;
+        position: relative !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) .stButton > button[kind="primary"]::before {
         content: '';
         position: absolute;
         top: 0;
@@ -86,6 +90,20 @@ st.markdown(
         height: 3px;
         background: #22c55e;
         border-radius: 0 0 3px 3px;
+    }
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) .stButton > button p {
+        font-size: 1.1rem !important;
+        margin: 0 !important;
+    }
+
+    section.main .block-container {
+        transition: opacity 0.12s ease-out;
+    }
+    .set-last-note {
+        color: #38bdf8;
+        font-size: 0.72rem;
+        margin: -0.15rem 0 0.35rem 0;
+        display: block;
     }
 
     #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
@@ -164,37 +182,152 @@ st.markdown(
 
 svc.ensure_database()
 
-PAGE_KEYS = [p[0] for p in NAV_ITEMS]
-
 if "page" not in st.session_state:
     st.session_state.page = "Home"
 if "lang" not in st.session_state:
     st.session_state.lang = "en"
-
-_nav_qp = st.query_params.get("p")
-if _nav_qp:
-    _nav_val = _nav_qp[0] if isinstance(_nav_qp, list) else _nav_qp
-    if _nav_val in PAGE_KEYS:
-        st.session_state.page = _nav_val
+if "workout_date" not in st.session_state:
+    st.session_state.workout_date = date.today()
+if "profile_section" not in st.session_state:
+    st.session_state.profile_section = "Workout"
 
 today_s = date.today().isoformat()
 
 
 def nav_bar():
-    """Pure HTML bottom bar — avoids Streamlit columns breaking on Cloud/mobile."""
+    """Session-state tabs (no URL reload) — same look as HTML nav."""
+    st.markdown('<span class="gym-bottom-nav-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
     current = st.session_state.page
-    links = []
-    for page, icon, short in NAV_ITEMS:
-        active = " active" if page == current else ""
-        href = f"?p={quote(page)}"
-        links.append(
-            f'<a class="gym-nav-item{active}" href="{href}">'
-            f'<span class="gym-nav-icon">{icon}</span><span>{short}</span></a>'
+    cols = st.columns(len(NAV_ITEMS), gap="small")
+    for col, (page, icon, short) in zip(cols, NAV_ITEMS):
+        with col:
+            kind = "primary" if page == current else "secondary"
+            if st.button(f"{icon}\n{short}", key=f"nav_{page}", use_container_width=True, type=kind):
+                if page != current:
+                    st.session_state.page = page
+                    st.rerun()
+
+
+def _set_defaults(logged, prev_set):
+    kg = float(logged.get("weight_kg") or 0) if logged else 0.0
+    reps = int(logged.get("reps") or 0) if logged else 0
+    if not logged.get("weight_kg") and prev_set and prev_set.get("weight_kg"):
+        kg = float(prev_set["weight_kg"])
+    if not logged.get("reps") and prev_set and prev_set.get("reps"):
+        reps = int(prev_set["reps"])
+    if reps <= 0:
+        reps = 12
+    return kg, reps
+
+
+def render_workout_log():
+    st.markdown('<div class="card-box"><div class="section-label">Workout log</div>', unsafe_allow_html=True)
+
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        picked = st.date_input(
+            "Choose day",
+            value=st.session_state.workout_date,
+            max_value=date.today(),
+            key="workout_date_input",
         )
-    st.markdown(
-        f'<nav class="gym-bottom-nav" aria-label="Main">{"".join(links)}</nav>',
-        unsafe_allow_html=True,
-    )
+    with c2:
+        if st.button("Today", use_container_width=True, key="workout_today_btn"):
+            st.session_state.workout_date = date.today()
+            st.rerun()
+    st.session_state.workout_date = picked
+    workout_d = picked.isoformat()
+
+    data = svc.get_workout_today(local_date=workout_d)
+    mg = data["plan"][0]["muscle_group"] if data.get("plan") else "—"
+    st.caption(f"{data['day_name']} · {mg} · {workout_d}")
+
+    session_id = data.get("session_id")
+    if not session_id:
+        if st.button("Start workout for this day", key=f"start_{workout_d}"):
+            session_id = svc.ensure_workout_session(local_date=workout_d)
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    extra_key = f"extra_exercises_{workout_d}"
+    if extra_key not in st.session_state:
+        st.session_state[extra_key] = []
+
+    with st.expander("Add exercise to this day"):
+        new_name = st.text_input("Exercise name", key=f"new_ex_name_{workout_d}")
+        n_sets = st.number_input("Sets", min_value=1, max_value=8, value=3, key=f"new_ex_sets_{workout_d}")
+        if st.button("Add exercise", key=f"new_ex_btn_{workout_d}") and new_name.strip():
+            entry = {
+                "exercise_name": new_name.strip(),
+                "sets_target": int(n_sets),
+                "reps_target": "12",
+                "muscle_group": "Custom",
+            }
+            names = {e["exercise_name"] for e in st.session_state[extra_key]}
+            if entry["exercise_name"] not in names:
+                st.session_state[extra_key].append(entry)
+            st.rerun()
+
+    exercises = list(data.get("exercises") or [])
+    seen = {e["exercise_name"] for e in exercises}
+    for ex in st.session_state[extra_key]:
+        if ex["exercise_name"] not in seen:
+            exercises.append({
+                **ex,
+                "previous_sets": {},
+                "previous_session_date": None,
+                "sets_logged": [],
+            })
+
+    if not exercises:
+        st.info("No exercises for this day. Add one above or pick another date.")
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    for ex in exercises:
+        ex_name = ex["exercise_name"]
+        target_sets = int(ex.get("sets_target") or 3)
+        prev_sets = ex.get("previous_sets") or {}
+        prev_date = ex.get("previous_session_date")
+        logged_by_num = {s["set_number"]: s for s in (ex.get("sets_logged") or [])}
+
+        with st.expander(f"{ex_name} · {target_sets}×{ex.get('reps_target', '')}", expanded=False):
+            if prev_date:
+                st.caption(f"Last session: {prev_date}")
+
+            for set_num in range(1, target_sets + 1):
+                logged = logged_by_num.get(set_num) or {}
+                prev_set = prev_sets.get(set_num)
+                if prev_set:
+                    st.markdown(
+                        f'<span class="set-last-note">Set {set_num} last time: '
+                        f'{prev_set.get("weight_kg") or "—"} kg × {prev_set.get("reps") or "—"} reps</span>',
+                        unsafe_allow_html=True,
+                    )
+                kg_def, reps_def = _set_defaults(logged, prev_set)
+                ckg, creps, csave = st.columns([2, 2, 1])
+                kg = ckg.number_input(
+                    f"Set {set_num} kg",
+                    min_value=0.0,
+                    step=0.5,
+                    value=kg_def,
+                    key=f"w_{workout_d}_{ex_name}_{set_num}",
+                )
+                reps = creps.number_input(
+                    f"Set {set_num} reps",
+                    min_value=0,
+                    value=reps_def,
+                    key=f"r_{workout_d}_{ex_name}_{set_num}",
+                )
+                if csave.button("Save", key=f"s_{workout_d}_{ex_name}_{set_num}"):
+                    svc.save_workout_set(
+                        session_id, ex_name, set_num, kg or None, reps or None, True
+                    )
+                    st.toast(f"{ex_name} set {set_num} saved")
+                    st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def app_header():
@@ -317,6 +450,7 @@ def page_dashboard():
         st.markdown(f"- **{ex['exercise_name']}** {ex['sets_target']}×{ex['reps_target']}")
     if data["exercises"] and st.button("Log workout sets →"):
         st.session_state.page = "Profile"
+        st.session_state.profile_section = "Workout"
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -354,13 +488,17 @@ def page_profile():
     st.markdown(f"**Age** {user.get('age')} · **Height** {user.get('height_cm')} cm · **Focus** {user.get('main_goal')}")
     st.caption(user.get("restrictions") or "")
 
+    sections = ["Course plan", "Workout", "Food", "Weight"]
+    sec_idx = sections.index(st.session_state.profile_section) if st.session_state.profile_section in sections else 1
     tab = st.radio(
         "Section",
-        ["Course plan", "Workout", "Food", "Weight"],
+        sections,
+        index=sec_idx,
         horizontal=True,
-        key="profile_section",
+        key="profile_section_radio",
         label_visibility="collapsed",
     )
+    st.session_state.profile_section = tab
 
     lang = st.selectbox("Course plan language", list(LANGS.keys()),
                         format_func=lambda c: LANGS[c]["label"])
@@ -376,19 +514,7 @@ def page_profile():
                     st.markdown(f"- {ex['name']}{tag} — {ex['detail']}")
 
     elif tab == "Workout":
-        data = svc.get_workout_today(local_date=today_s)
-        for ex in data["exercises"]:
-            with st.expander(ex["exercise_name"]):
-                if ex["last_weight_kg"]:
-                    st.caption(f"Last: {ex['last_weight_kg']} kg × {ex['last_reps']}")
-                c1, c2, c3 = st.columns([2, 2, 1])
-                kg = c1.number_input("kg", min_value=0.0, step=0.5, key=f"pw_{ex['exercise_name']}")
-                reps = c2.number_input("reps", min_value=0, value=12, key=f"pr_{ex['exercise_name']}")
-                if c3.button("Save", key=f"ps_{ex['exercise_name']}"):
-                    svc.save_workout_set(data["session_id"], ex["exercise_name"], 1,
-                                         kg or None, reps or None, True)
-                    st.success("Saved!")
-                    st.rerun()
+        render_workout_log()
 
     elif tab == "Food":
         food, daily = svc.get_food(today_s)
