@@ -2,12 +2,11 @@
 Streamlit Cloud entry point — mirrors the Flask PWA layout.
 Settings → Main file path: streamlit_app.py
 """
-import json
 from datetime import date
+from urllib.parse import quote
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 import services as svc
 from data.course_i18n import LANGS, get_course_plan
@@ -28,89 +27,67 @@ NAV_ITEMS = [
     ("Profile", "👤", "Profile"),
 ]
 
-# Injected into parent document — st.markdown CSS often misses fixed nav on Streamlit Cloud
-NAV_BAR_CSS = """
-#gym-nav-fixed-root {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 999999 !important;
-  margin: 0 !important;
-  padding: 0.35rem 0.2rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
-  background: rgba(14, 18, 26, 0.97) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
-}
-#gym-nav-fixed-root [data-testid="stHorizontalBlock"] {
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
-  align-items: stretch !important;
-  max-width: 540px !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-  gap: 0 !important;
-}
-#gym-nav-fixed-root [data-testid="column"] {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
-  width: auto !important;
-  padding: 0 !important;
-}
-#gym-nav-fixed-root [data-testid="column"] > div,
-#gym-nav-fixed-root .stButton {
-  width: 100% !important;
-}
-#gym-nav-fixed-root .stButton > button {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-  min-height: 52px !important;
-  padding: 0.25rem 0.05rem !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: #8b9cb3 !important;
-  font-size: 0.58rem !important;
-  font-weight: 600 !important;
-  line-height: 1.1 !important;
-  white-space: pre-line !important;
-  word-break: keep-all !important;
-  overflow: hidden !important;
-}
-#gym-nav-fixed-root .stButton > button p {
-  font-size: 1.1rem !important;
-  margin: 0 !important;
-  line-height: 1 !important;
-}
-#gym-nav-fixed-root .gym-nav-active .stButton > button {
-  color: #22c55e !important;
-  position: relative !important;
-}
-#gym-nav-fixed-root .gym-nav-active .stButton > button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 15%;
-  right: 15%;
-  height: 3px;
-  background: #22c55e;
-  border-radius: 0 0 3px 3px;
-}
-"""
-
 st.markdown(
     """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-"""
-    + NAV_BAR_CSS
-    + """
+
+    nav.gym-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999999;
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: space-around;
+        max-width: 540px;
+        margin: 0 auto;
+        padding: 0.4rem 0.25rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+        background: rgba(14, 18, 26, 0.97);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+        box-sizing: border-box;
+    }
+    nav.gym-bottom-nav a.gym-nav-item {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.15rem;
+        padding: 0.35rem 0.1rem;
+        text-decoration: none;
+        color: #8b9cb3;
+        font-size: 0.58rem;
+        font-weight: 600;
+        line-height: 1.1;
+        text-align: center;
+        position: relative;
+        -webkit-tap-highlight-color: transparent;
+    }
+    nav.gym-bottom-nav a.gym-nav-item .gym-nav-icon {
+        font-size: 1.15rem;
+        line-height: 1;
+    }
+    nav.gym-bottom-nav a.gym-nav-item.active {
+        color: #22c55e;
+    }
+    nav.gym-bottom-nav a.gym-nav-item.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 18%;
+        right: 18%;
+        height: 3px;
+        background: #22c55e;
+        border-radius: 0 0 3px 3px;
+    }
+
     #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; height: 0; }
     [data-testid="stToolbar"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"], .stDeployButton { display: none !important; }
@@ -128,7 +105,7 @@ st.markdown(
         max-width: 540px !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
-        padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     .app-topbar {
@@ -187,90 +164,36 @@ st.markdown(
 
 svc.ensure_database()
 
+PAGE_KEYS = [p[0] for p in NAV_ITEMS]
+
 if "page" not in st.session_state:
     st.session_state.page = "Home"
 if "lang" not in st.session_state:
     st.session_state.lang = "en"
 
+_nav_qp = st.query_params.get("p")
+if _nav_qp:
+    _nav_val = _nav_qp[0] if isinstance(_nav_qp, list) else _nav_qp
+    if _nav_val in PAGE_KEYS:
+        st.session_state.page = _nav_val
+
 today_s = date.today().isoformat()
 
 
 def nav_bar():
-    st.markdown('<div id="gym-bottom-nav-anchor" hidden></div>', unsafe_allow_html=True)
-    cols = st.columns(len(NAV_ITEMS), gap="small")
-    for col, (page, icon, short) in zip(cols, NAV_ITEMS):
-        with col:
-            active = st.session_state.page == page
-            wrap = "gym-nav-active" if active else ""
-            st.markdown(f'<div class="{wrap}">', unsafe_allow_html=True)
-            if st.button(f"{icon}\n{short}", key=f"nav_{page}", use_container_width=True):
-                st.session_state.page = page
-                st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-
-
-def pin_bottom_nav():
-    """Inject nav CSS into parent + pin bar (Streamlit Cloud splits anchor from columns)."""
-    css_json = json.dumps(NAV_BAR_CSS)
-    components.html(
-        f"""
-<script>
-(function () {{
-  const doc = window.parent.document;
-  const CSS = {css_json};
-
-  if (!doc.getElementById("gym-nav-styles")) {{
-    const style = doc.createElement("style");
-    style.id = "gym-nav-styles";
-    style.textContent = CSS;
-    doc.head.appendChild(style);
-  }}
-
-  function findNavRoot(anchor) {{
-    let block = anchor.closest("[data-testid='stVerticalBlock']");
-    if (!block) return null;
-    if (block.querySelector("[data-testid='stHorizontalBlock']")) return block;
-    let sib = block;
-    for (let i = 0; i < 8; i++) {{
-      sib = sib.nextElementSibling;
-      if (!sib) break;
-      if (sib.querySelector("[data-testid='stHorizontalBlock']")) return sib;
-    }}
-    return block;
-  }}
-
-  function apply() {{
-    const anchor = doc.getElementById("gym-bottom-nav-anchor");
-    if (!anchor) return;
-    const anchorBlock = anchor.closest("[data-testid='stVerticalBlock']");
-    const root = findNavRoot(anchor);
-    if (!root) return;
-
-    if (anchorBlock && anchorBlock !== root) {{
-      anchorBlock.style.cssText =
-        "height:0!important;margin:0!important;padding:0!important;border:none!important;overflow:hidden!important;";
-    }}
-
-    root.id = "gym-nav-fixed-root";
-    const row = root.querySelector("[data-testid='stHorizontalBlock']");
-    if (!row) return;
-    row.style.display = "flex";
-    row.style.flexDirection = "row";
-    row.style.flexWrap = "nowrap";
-    root.querySelectorAll("[data-testid='column']").forEach((col) => {{
-      col.style.flex = "1 1 0";
-      col.style.minWidth = "0";
-    }});
-  }}
-
-  apply();
-  setTimeout(apply, 50);
-  setTimeout(apply, 300);
-  new MutationObserver(apply).observe(doc.body, {{ childList: true, subtree: true }});
-}})();
-</script>
-        """,
-        height=0,
+    """Pure HTML bottom bar — avoids Streamlit columns breaking on Cloud/mobile."""
+    current = st.session_state.page
+    links = []
+    for page, icon, short in NAV_ITEMS:
+        active = " active" if page == current else ""
+        href = f"?p={quote(page)}"
+        links.append(
+            f'<a class="gym-nav-item{active}" href="{href}">'
+            f'<span class="gym-nav-icon">{icon}</span><span>{short}</span></a>'
+        )
+    st.markdown(
+        f'<nav class="gym-bottom-nav" aria-label="Main">{"".join(links)}</nav>',
+        unsafe_allow_html=True,
     )
 
 
@@ -509,4 +432,3 @@ else:
     page_profile()
 
 nav_bar()
-pin_bottom_nav()
