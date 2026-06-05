@@ -2,12 +2,11 @@
 Streamlit Cloud entry point — mirrors the Flask PWA layout.
 Settings → Main file path: streamlit_app.py
 """
-import json
 from datetime import date
+from urllib.parse import quote
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 import services as svc
 from data.course_i18n import LANGS, get_course_plan
@@ -33,18 +32,6 @@ st.markdown(
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    .gym-nav-hooks-marker { display: none !important; }
-    div[data-testid="stVerticalBlock"]:has(.gym-nav-hooks-marker) {
-        position: fixed !important;
-        left: -9999px !important;
-        width: 1px !important;
-        height: 1px !important;
-        overflow: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        z-index: -1 !important;
-    }
-
     nav.gym-bottom-nav {
         position: fixed;
         bottom: 0;
@@ -66,7 +53,7 @@ st.markdown(
         box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
         box-sizing: border-box;
     }
-    nav.gym-bottom-nav button.gym-nav-item {
+    nav.gym-bottom-nav a.gym-nav-item {
         flex: 1 1 0;
         min-width: 0;
         display: flex;
@@ -78,6 +65,7 @@ st.markdown(
         border: none;
         background: transparent;
         color: #8b9cb3;
+        text-decoration: none;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         font-size: 0.58rem;
         font-weight: 600;
@@ -90,10 +78,10 @@ st.markdown(
         font-size: 1.15rem;
         line-height: 1;
     }
-    nav.gym-bottom-nav button.gym-nav-item.active {
+    nav.gym-bottom-nav a.gym-nav-item.active {
         color: #22c55e;
     }
-    nav.gym-bottom-nav button.gym-nav-item.active::before {
+    nav.gym-bottom-nav a.gym-nav-item.active::before {
         content: '';
         position: absolute;
         top: 0;
@@ -199,64 +187,31 @@ if "workout_date" not in st.session_state:
 if "profile_section" not in st.session_state:
     st.session_state.profile_section = "Workout"
 
+PAGE_KEYS = [p[0] for p in NAV_ITEMS]
+_nav_qp = st.query_params.get("p")
+if _nav_qp:
+    _nav_val = _nav_qp[0] if isinstance(_nav_qp, list) else _nav_qp
+    if _nav_val in PAGE_KEYS:
+        st.session_state.page = _nav_val
+
 today_s = date.today().isoformat()
 
 
 def nav_bar():
-    """HTML tab bar (clean on Cloud) + hidden buttons for smooth in-app navigation."""
-    st.markdown('<span class="gym-nav-hooks-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
-    for page, _icon, _short in NAV_ITEMS:
-        if st.button("·", key=f"navhook_{page}"):
-            if st.session_state.page != page:
-                st.session_state.page = page
-                st.rerun()
-
+    """Pure HTML tab bar — stable on Streamlit Cloud (no JS bridge)."""
     current = st.session_state.page
     tabs = []
     for page, icon, short in NAV_ITEMS:
         active = " active" if page == current else ""
+        href = f"?p={quote(page)}"
         tabs.append(
-            f'<button type="button" class="gym-nav-item{active}" data-page="{page}">'
+            f'<a class="gym-nav-item{active}" href="{href}">'
             f'<span class="gym-nav-icon">{icon}</span>'
-            f'<span class="gym-nav-label">{short}</span></button>'
+            f'<span class="gym-nav-label">{short}</span></a>'
         )
     st.markdown(
         f'<nav class="gym-bottom-nav" aria-label="Main">{"".join(tabs)}</nav>',
         unsafe_allow_html=True,
-    )
-
-    page_index = json.dumps({p[0]: i for i, p in enumerate(NAV_ITEMS)})
-    components.html(
-        f"""
-<script>
-(function () {{
-  const doc = window.parent.document;
-  const PAGE_INDEX = {page_index};
-  function hooks() {{
-    const block = doc.querySelector('div[data-testid="stVerticalBlock"]:has(.gym-nav-hooks-marker)');
-    return block ? Array.from(block.querySelectorAll("button")) : [];
-  }}
-  function wire() {{
-    doc.querySelectorAll("nav.gym-bottom-nav button.gym-nav-item[data-page]").forEach((tab) => {{
-      if (tab.dataset.wired) return;
-      tab.dataset.wired = "1";
-      tab.addEventListener("click", (e) => {{
-        e.preventDefault();
-        const page = tab.getAttribute("data-page");
-        const idx = PAGE_INDEX[page];
-        const btns = hooks();
-        if (btns[idx]) btns[idx].click();
-      }});
-    }});
-  }}
-  wire();
-  setTimeout(wire, 80);
-  setTimeout(wire, 400);
-  new MutationObserver(wire).observe(doc.body, {{ childList: true, subtree: true }});
-}})();
-</script>
-        """,
-        height=0,
     )
 
 
