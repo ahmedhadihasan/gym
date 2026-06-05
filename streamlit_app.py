@@ -2,10 +2,12 @@
 Streamlit Cloud entry point — mirrors the Flask PWA layout.
 Settings → Main file path: streamlit_app.py
 """
+import json
 from datetime import date
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 import services as svc
 from data.course_i18n import LANGS, get_course_plan
@@ -31,74 +33,75 @@ st.markdown(
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    .gym-bottom-nav-marker { display: none !important; }
-    /* Fixed bottom bar — uses st.segmented_control (one row, works on Streamlit Cloud) */
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) {
+    .gym-nav-hooks-marker { display: none !important; }
+    div[data-testid="stVerticalBlock"]:has(.gym-nav-hooks-marker) {
         position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 999999 !important;
-        margin: 0 !important;
-        padding: 0.4rem 0.35rem calc(0.55rem + env(safe-area-inset-bottom, 0px)) !important;
-        background: rgba(14, 18, 26, 0.97) !important;
+        left: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        z-index: -1 !important;
+    }
+
+    nav.gym-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999999;
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: space-around;
+        max-width: 540px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 0.4rem 0.15rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+        background: rgba(14, 18, 26, 0.97);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+        box-sizing: border-box;
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [data-testid="stSegmentedControl"],
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [data-testid="stPills"] {
-        max-width: 540px !important;
-        width: 100% !important;
-        margin: 0 auto !important;
+    nav.gym-bottom-nav button.gym-nav-item {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.15rem;
+        padding: 0.35rem 0.05rem;
+        border: none;
+        background: transparent;
+        color: #8b9cb3;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 0.58rem;
+        font-weight: 600;
+        line-height: 1.1;
+        cursor: pointer;
+        position: relative;
+        -webkit-tap-highlight-color: transparent;
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        width: 100% !important;
-        gap: 0 !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
+    nav.gym-bottom-nav .gym-nav-icon {
+        font-size: 1.15rem;
+        line-height: 1;
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] label {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-        justify-content: center !important;
-        margin: 0 !important;
-        padding: 0.35rem 0.1rem !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: #8b9cb3 !important;
-        font-size: 0.58rem !important;
-        font-weight: 600 !important;
-        line-height: 1.15 !important;
-        white-space: pre-line !important;
-        text-align: center !important;
+    nav.gym-bottom-nav button.gym-nav-item.active {
+        color: #22c55e;
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] label:has(input:checked) {
-        color: #22c55e !important;
-        position: relative !important;
-    }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] label:has(input:checked)::before {
+    nav.gym-bottom-nav button.gym-nav-item.active::before {
         content: '';
         position: absolute;
         top: 0;
-        left: 15%;
-        right: 15%;
+        left: 18%;
+        right: 18%;
         height: 3px;
         background: #22c55e;
         border-radius: 0 0 3px 3px;
-    }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] input[type="radio"] {
-        position: absolute !important;
-        opacity: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-        pointer-events: none !important;
     }
 
     section.main .block-container {
@@ -199,25 +202,62 @@ if "profile_section" not in st.session_state:
 today_s = date.today().isoformat()
 
 
-NAV_PAGES = [p[0] for p in NAV_ITEMS]
-NAV_LABELS = {p[0]: f"{p[1]}\n{p[2]}" for p in NAV_ITEMS}
-
-
 def nav_bar():
-    """Single segmented control = 4 tabs in one row (columns break on Streamlit Cloud)."""
-    st.markdown('<span class="gym-bottom-nav-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
-    current = st.session_state.page if st.session_state.page in NAV_PAGES else "Home"
-    picked = st.segmented_control(
-        "Main navigation",
-        options=NAV_PAGES,
-        default=current,
-        format_func=lambda p: NAV_LABELS[p],
-        label_visibility="collapsed",
-        width="stretch",
+    """HTML tab bar (clean on Cloud) + hidden buttons for smooth in-app navigation."""
+    st.markdown('<span class="gym-nav-hooks-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
+    for page, _icon, _short in NAV_ITEMS:
+        if st.button("·", key=f"navhook_{page}"):
+            if st.session_state.page != page:
+                st.session_state.page = page
+                st.rerun()
+
+    current = st.session_state.page
+    tabs = []
+    for page, icon, short in NAV_ITEMS:
+        active = " active" if page == current else ""
+        tabs.append(
+            f'<button type="button" class="gym-nav-item{active}" data-page="{page}">'
+            f'<span class="gym-nav-icon">{icon}</span>'
+            f'<span class="gym-nav-label">{short}</span></button>'
+        )
+    st.markdown(
+        f'<nav class="gym-bottom-nav" aria-label="Main">{"".join(tabs)}</nav>',
+        unsafe_allow_html=True,
     )
-    if picked and picked != current:
-        st.session_state.page = picked
-        st.rerun()
+
+    page_index = json.dumps({p[0]: i for i, p in enumerate(NAV_ITEMS)})
+    components.html(
+        f"""
+<script>
+(function () {{
+  const doc = window.parent.document;
+  const PAGE_INDEX = {page_index};
+  function hooks() {{
+    const block = doc.querySelector('div[data-testid="stVerticalBlock"]:has(.gym-nav-hooks-marker)');
+    return block ? Array.from(block.querySelectorAll("button")) : [];
+  }}
+  function wire() {{
+    doc.querySelectorAll("nav.gym-bottom-nav button.gym-nav-item[data-page]").forEach((tab) => {{
+      if (tab.dataset.wired) return;
+      tab.dataset.wired = "1";
+      tab.addEventListener("click", (e) => {{
+        e.preventDefault();
+        const page = tab.getAttribute("data-page");
+        const idx = PAGE_INDEX[page];
+        const btns = hooks();
+        if (btns[idx]) btns[idx].click();
+      }});
+    }});
+  }}
+  wire();
+  setTimeout(wire, 80);
+  setTimeout(wire, 400);
+  new MutationObserver(wire).observe(doc.body, {{ childList: true, subtree: true }});
+}})();
+</script>
+        """,
+        height=0,
+    )
 
 
 def _set_defaults(logged, prev_set):
