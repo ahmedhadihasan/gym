@@ -32,6 +32,7 @@ st.markdown(
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     .gym-bottom-nav-marker { display: none !important; }
+    /* Fixed bottom bar — uses st.segmented_control (one row, works on Streamlit Cloud) */
     div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) {
         position: fixed !important;
         bottom: 0 !important;
@@ -39,61 +40,65 @@ st.markdown(
         right: 0 !important;
         z-index: 999999 !important;
         margin: 0 !important;
-        padding: 0.35rem 0.25rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+        padding: 0.4rem 0.35rem calc(0.55rem + env(safe-area-inset-bottom, 0px)) !important;
         background: rgba(14, 18, 26, 0.97) !important;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [data-testid="stSegmentedControl"],
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [data-testid="stPills"] {
         max-width: 540px !important;
         width: 100% !important;
         margin: 0 auto !important;
-        gap: 0 !important;
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [data-testid="column"] {
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        gap: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] label {
         flex: 1 1 0 !important;
         min-width: 0 !important;
-        padding: 0 1px !important;
-    }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) .stButton > button {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
         justify-content: center !important;
-        min-height: 52px !important;
-        padding: 0.3rem 0.1rem !important;
+        margin: 0 !important;
+        padding: 0.35rem 0.1rem !important;
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
         color: #8b9cb3 !important;
         font-size: 0.58rem !important;
         font-weight: 600 !important;
-        line-height: 1.1 !important;
+        line-height: 1.15 !important;
         white-space: pre-line !important;
-        width: 100% !important;
+        text-align: center !important;
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) .stButton > button[kind="primary"] {
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] label:has(input:checked) {
         color: #22c55e !important;
         position: relative !important;
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) .stButton > button[kind="primary"]::before {
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] label:has(input:checked)::before {
         content: '';
         position: absolute;
         top: 0;
-        left: 18%;
-        right: 18%;
+        left: 15%;
+        right: 15%;
         height: 3px;
         background: #22c55e;
         border-radius: 0 0 3px 3px;
     }
-    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) .stButton > button p {
-        font-size: 1.1rem !important;
-        margin: 0 !important;
+    div[data-testid="stVerticalBlock"]:has(.gym-bottom-nav-marker) [role="radiogroup"] input[type="radio"] {
+        position: absolute !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        pointer-events: none !important;
     }
 
     section.main .block-container {
@@ -194,18 +199,25 @@ if "profile_section" not in st.session_state:
 today_s = date.today().isoformat()
 
 
+NAV_PAGES = [p[0] for p in NAV_ITEMS]
+NAV_LABELS = {p[0]: f"{p[1]}\n{p[2]}" for p in NAV_ITEMS}
+
+
 def nav_bar():
-    """Session-state tabs (no URL reload) — same look as HTML nav."""
+    """Single segmented control = 4 tabs in one row (columns break on Streamlit Cloud)."""
     st.markdown('<span class="gym-bottom-nav-marker" aria-hidden="true"></span>', unsafe_allow_html=True)
-    current = st.session_state.page
-    cols = st.columns(len(NAV_ITEMS), gap="small")
-    for col, (page, icon, short) in zip(cols, NAV_ITEMS):
-        with col:
-            kind = "primary" if page == current else "secondary"
-            if st.button(f"{icon}\n{short}", key=f"nav_{page}", use_container_width=True, type=kind):
-                if page != current:
-                    st.session_state.page = page
-                    st.rerun()
+    current = st.session_state.page if st.session_state.page in NAV_PAGES else "Home"
+    picked = st.segmented_control(
+        "Main navigation",
+        options=NAV_PAGES,
+        default=current,
+        format_func=lambda p: NAV_LABELS[p],
+        label_visibility="collapsed",
+        width="stretch",
+    )
+    if picked and picked != current:
+        st.session_state.page = picked
+        st.rerun()
 
 
 def _set_defaults(logged, prev_set):
